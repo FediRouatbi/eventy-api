@@ -1,0 +1,130 @@
+POST http://localhost:8080/v1/auth/register
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "password": "secret123"
+}
+
+###
+
+POST http://localhost:8080/v1/auth/register/resend-otp
+Content-Type: application/json
+
+{
+  "email": "john@example.com"
+}
+
+###
+
+POST http://localhost:8080/v1/auth/register/verify
+Content-Type: application/json
+
+{
+  "email": "john@example.com",
+  "otp": "123456"
+}
+
+###
+
+POST http://localhost:8080/v1/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "john@example.com"
+}
+
+###
+
+POST http://localhost:8080/v1/auth/reset-password
+Content-Type: application/json
+
+{
+  "email": "john@example.com",
+  "token": "123456",
+  "new_password": "newSecret123"
+}
+
+###
+
+POST http://localhost:8080/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "john@example.com",
+  "password": "secret123"
+}
+
+###
+
+POST http://localhost:8080/v1/auth/refresh
+Content-Type: application/json
+
+{
+  "refresh_token": "{{refresh_token}}"
+}
+
+###
+
+POST http://localhost:8080/v1/auth/logout
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "refresh_token": "{{refresh_token}}"
+}
+
+###
+
+GET http://localhost:8080/v1/categories
+
+###
+
+POST http://localhost:8080/v1/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Cinema",
+  "slug": "cinema",
+  "image_url": "https://example.com/cinema.jpg"
+}
+
+###
+
+GET http://localhost:8080/v1/events
+Authorization: Bearer {{token}}
+
+###
+
+POST http://localhost:8080/v1/events
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "organizer_id": "{{organizer_id}}",
+  "category_id": "{{category_id}}",
+  "title": "Lagos Tech Expo 2026",
+  "slug": "lagos-tech-expo-2026",
+  "description": "A full-day conference for builders, founders, and product teams.",
+  "venue_name": "Landmark Centre",
+  "venue_address": "Water Corporation Drive, Victoria Island",
+  "city": "Lagos",
+  "country": "Nigeria",
+  "banner_url": "https://example.com/banner.jpg",
+  "poster_url": "https://example.com/poster.jpg",
+  "status": "draft",
+  "currency": "NGN",
+  "is_featured": false
+}
+
+###
+
+GET http://localhost:8080/v1/events/{{event_id}}
+Authorization: Bearer {{token}}
+
+###
+
+GET http://localhost:8080/v1/users/me
+Authorization: Bearer {{token}}

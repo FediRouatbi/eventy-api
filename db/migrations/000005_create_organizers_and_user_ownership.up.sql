@@ -1,0 +1,15 @@
+CREATE TABLE organizers (
+    id CHAR(36) NOT NULL PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    slug VARCHAR(180) NOT NULL UNIQUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+ALTER TABLE users
+ADD COLUMN organizer_id CHAR(36) NULL AFTER role,
+ADD CONSTRAINT fk_users_organizer
+    FOREIGN KEY (organizer_id) REFERENCES organizers(id)
+    ON DELETE SET NULL;
+
+CREATE INDEX idx_users_organizer_id ON users (organizer_id);
