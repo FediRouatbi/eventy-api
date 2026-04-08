@@ -230,6 +230,37 @@ func (s *Service) ResetPassword(ctx context.Context, input ResetPasswordInput) (
 	}, nil
 }
 
+func (s *Service) ChangePassword(ctx context.Context, userID uuid.UUID, input ChangePasswordInput) (MessageResponse, error) {
+	input.CurrentPassword = strings.TrimSpace(input.CurrentPassword)
+	input.NewPassword = strings.TrimSpace(input.NewPassword)
+
+	if err := validateChangePasswordInput(input); err != nil {
+		return MessageResponse{}, err
+	}
+
+	_, passwordHash, err := s.repository.GetUserByID(ctx, userID)
+	if err != nil {
+		return MessageResponse{}, err
+	}
+
+	if err := comparePassword(passwordHash, input.CurrentPassword); err != nil {
+		return MessageResponse{}, ErrCurrentPasswordWrong
+	}
+
+	newPasswordHash, err := hashPassword(input.NewPassword)
+	if err != nil {
+		return MessageResponse{}, err
+	}
+
+	if err := s.repository.UpdateUserPasswordByID(ctx, userID, newPasswordHash); err != nil {
+		return MessageResponse{}, err
+	}
+
+	return MessageResponse{
+		Message: "password changed successfully",
+	}, nil
+}
+
 func (s *Service) RefreshSession(ctx context.Context, input RefreshTokenInput) (AuthResult, error) {
 	input.RefreshToken = strings.TrimSpace(input.RefreshToken)
 

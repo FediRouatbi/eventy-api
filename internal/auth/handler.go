@@ -158,6 +158,32 @@ func (h *Handler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 	responses.WriteJSON(w, http.StatusOK, result)
 }
 
+func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
+	claims, ok := httpmiddleware.ClaimsFromContext(r.Context())
+	if !ok {
+		responses.WriteError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	var input ChangePasswordInput
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+
+	if err := decoder.Decode(&input); err != nil {
+		logger.RequestError(r, "auth.change_password.decode", err)
+		responses.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	result, err := h.service.ChangePassword(r.Context(), claims.UserID, input)
+	if err != nil {
+		h.writeAuthError(w, r, err)
+		return
+	}
+
+	responses.WriteJSON(w, http.StatusOK, result)
+}
+
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	if _, ok := httpmiddleware.ClaimsFromContext(r.Context()); !ok {
 		responses.WriteError(w, http.StatusUnauthorized, "unauthorized")
@@ -207,6 +233,8 @@ func (h *Handler) writeAuthError(w http.ResponseWriter, r *http.Request, err err
 		errors.Is(err, ErrPasswordResetExpired),
 		errors.Is(err, ErrPasswordResetInvalid):
 		responses.WriteError(w, http.StatusBadRequest, err.Error())
+	case errors.Is(err, ErrCurrentPasswordWrong):
+		responses.WriteError(w, http.StatusUnauthorized, err.Error())
 	default:
 		responses.WriteError(w, http.StatusInternalServerError, "internal server error")
 	}

@@ -44,6 +44,11 @@ type ResetPasswordInput struct {
 	NewPassword string `json:"new_password"`
 }
 
+type ChangePasswordInput struct {
+	CurrentPassword string `json:"current_password"`
+	NewPassword     string `json:"new_password"`
+}
+
 type User struct {
 	ID          uuid.UUID  `json:"id"`
 	Name        string     `json:"name"`

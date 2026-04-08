@@ -19,8 +19,6 @@ func main() {
 		log.Println("no .env file found, using system env vars")
 	}
 
-
-
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatalf("load config: %v", err)

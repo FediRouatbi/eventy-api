@@ -13,6 +13,9 @@
   ],
   "tags": [
     {
+      "name": "Admins"
+    },
+    {
       "name": "Auth"
     },
     {
@@ -26,6 +29,249 @@
     }
   ],
   "paths": {
+    "/v1/admins/organizers": {
+      "get": {
+        "tags": ["Admins"],
+        "summary": "List organizers",
+        "description": "Super admins can list organizers with the linked admin account plus event and session totals for each organizer.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Organizer list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrganizerListItem"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Admins"],
+        "summary": "Create organizer admin",
+        "description": "Super admins can create an organizer together with its linked organizer admin account.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrganizerAdminInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Organizer admin created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateOrganizerAdminResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/admins/organizers/{organizerID}": {
+      "get": {
+        "tags": ["Admins"],
+        "summary": "Get organizer",
+        "description": "Super admins can fetch a single organizer with its linked admin account and organizer-scoped event summaries in one response.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organizerID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Organizer details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizerDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/admins/organizers/{organizerID}/admin": {
+      "get": {
+        "tags": ["Admins"],
+        "summary": "Get organizer admin",
+        "description": "Super admins can fetch the single organizer admin account attached to a specific organizer.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organizerID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Organizer admin",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizerAdmin"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/admins/organizers/{organizerID}/admin/password": {
+      "patch": {
+        "tags": ["Admins"],
+        "summary": "Reset organizer admin password",
+        "description": "Super admins can set a new password for the organizer admin account attached to an organizer.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organizerID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetOrganizerAdminPasswordInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
     "/v1/categories": {
       "get": {
         "tags": ["Categories"],
@@ -85,6 +331,70 @@
             "$ref": "#/components/responses/ErrorResponse"
           },
           "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/public/events": {
+      "get": {
+        "tags": ["Events"],
+        "summary": "List public events",
+        "description": "Returns published events enriched for the public discovery experience, including organizer and category display data, the next upcoming session, and derived ticket summary fields.",
+        "responses": {
+          "200": {
+            "description": "Public event list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublicEvent"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/public/events/{eventID}": {
+      "get": {
+        "tags": ["Events"],
+        "summary": "Get public event",
+        "description": "Returns a published event with public-facing organizer, category, session, and ticket information.",
+        "parameters": [
+          {
+            "name": "eventID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Public event details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicEventDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
             "$ref": "#/components/responses/ErrorResponse"
           },
           "500": {
@@ -180,7 +490,7 @@
       "get": {
         "tags": ["Events"],
         "summary": "Get event",
-        "description": "Organizer admins can only fetch events belonging to their organizer. Super admins can fetch any event.",
+        "description": "Organizer admins can only fetch events belonging to their organizer. Super admins can fetch any event. The response includes sessions and ticket types for dashboard configuration.",
         "security": [
           {
             "bearerAuth": []
@@ -203,7 +513,388 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Event"
+                  "$ref": "#/components/schemas/EventDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/events/{eventID}/sessions": {
+      "get": {
+        "tags": ["Events"],
+        "summary": "List event sessions",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "eventID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Event session list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EventSession"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Events"],
+        "summary": "Create event session",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "eventID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEventSessionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Event session created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventSession"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/events/{eventID}/sessions/{sessionID}": {
+      "patch": {
+        "tags": ["Events"],
+        "summary": "Update event session",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "eventID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sessionID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEventSessionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Event session updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventSession"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/events/{eventID}/sessions/{sessionID}/ticket-types": {
+      "get": {
+        "tags": ["Events"],
+        "summary": "List ticket types",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "eventID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sessionID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ticket type list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TicketType"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Events"],
+        "summary": "Create ticket type",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "eventID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sessionID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTicketTypeInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Ticket type created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketType"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/events/{eventID}/sessions/{sessionID}/ticket-types/{ticketTypeID}": {
+      "patch": {
+        "tags": ["Events"],
+        "summary": "Update ticket type",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "eventID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sessionID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "ticketTypeID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTicketTypeInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ticket type updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketType"
                 }
               }
             }
@@ -412,6 +1103,49 @@
         }
       }
     },
+    "/v1/auth/change-password": {
+      "patch": {
+        "tags": ["Auth"],
+        "summary": "Change password",
+        "description": "Authenticated users can change their password by providing their current password.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password changed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
     "/v1/auth/forgot-password": {
       "post": {
         "tags": ["Auth"],
@@ -584,6 +1318,45 @@
           }
         }
       },
+      "CreateOrganizerAdminInput": {
+        "type": "object",
+        "required": ["organizer_name", "organizer_slug", "admin_name", "admin_email", "admin_password"],
+        "properties": {
+          "organizer_name": {
+            "type": "string",
+            "example": "Eventy Lagos"
+          },
+          "organizer_slug": {
+            "type": "string",
+            "example": "eventy-lagos"
+          },
+          "admin_name": {
+            "type": "string",
+            "example": "Lagos Organizer Admin"
+          },
+          "admin_email": {
+            "type": "string",
+            "format": "email",
+            "example": "organizer@example.com"
+          },
+          "admin_password": {
+            "type": "string",
+            "minLength": 8,
+            "example": "secret123"
+          }
+        }
+      },
+      "ResetOrganizerAdminPasswordInput": {
+        "type": "object",
+        "required": ["password"],
+        "properties": {
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "example": "newSecret123"
+          }
+        }
+      },
       "CreateCategoryInput": {
         "type": "object",
         "required": ["name", "slug"],
@@ -595,6 +1368,10 @@
           "slug": {
             "type": "string",
             "example": "cinema"
+          },
+          "description": {
+            "type": "string",
+            "example": "Curated screenings, premieres, and cultural film nights."
           },
           "image_url": {
             "type": "string",
@@ -638,13 +1415,25 @@
             "type": "string",
             "example": "Lagos"
           },
-          "country": {
-            "type": "string",
-            "example": "Nigeria"
-          },
-          "banner_url": {
-            "type": "string",
-            "example": "https://example.com/banner.jpg"
+            "country": {
+              "type": "string",
+              "example": "Nigeria"
+            },
+            "latitude": {
+              "type": "number",
+              "format": "double",
+              "example": 6.4281,
+              "nullable": true
+            },
+            "longitude": {
+              "type": "number",
+              "format": "double",
+              "example": 3.4219,
+              "nullable": true
+            },
+            "banner_url": {
+              "type": "string",
+              "example": "https://example.com/banner.jpg"
           },
           "poster_url": {
             "type": "string",
@@ -662,6 +1451,116 @@
           "is_featured": {
             "type": "boolean",
             "example": false
+          }
+        }
+      },
+      "CreateEventSessionInput": {
+        "type": "object",
+        "required": ["starts_at", "ends_at", "status"],
+        "properties": {
+          "starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ends_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sales_starts_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "sales_ends_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": ["scheduled", "completed", "cancelled"],
+            "example": "scheduled"
+          }
+        }
+      },
+      "UpdateEventSessionInput": {
+        "type": "object",
+        "required": ["starts_at", "ends_at", "status"],
+        "properties": {
+          "starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ends_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sales_starts_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "sales_ends_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": ["scheduled", "completed", "cancelled"],
+            "example": "scheduled"
+          }
+        }
+      },
+      "CreateTicketTypeInput": {
+        "type": "object",
+        "required": ["name", "price", "quantity", "max_per_order"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Early Bird"
+          },
+          "description": {
+            "type": "string",
+            "example": "Discounted ticket for early buyers"
+          },
+          "price": {
+            "type": "number",
+            "example": 15000
+          },
+          "quantity": {
+            "type": "integer",
+            "example": 100
+          },
+          "max_per_order": {
+            "type": "integer",
+            "example": 4
+          }
+        }
+      },
+      "UpdateTicketTypeInput": {
+        "type": "object",
+        "required": ["name", "price", "quantity", "max_per_order"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Regular"
+          },
+          "description": {
+            "type": "string",
+            "example": "Standard access ticket"
+          },
+          "price": {
+            "type": "number",
+            "example": 20000
+          },
+          "quantity": {
+            "type": "integer",
+            "example": 200
+          },
+          "max_per_order": {
+            "type": "integer",
+            "example": 5
           }
         }
       },
@@ -704,6 +1603,21 @@
           "password": {
             "type": "string",
             "example": "secret123"
+          }
+        }
+      },
+      "ChangePasswordInput": {
+        "type": "object",
+        "required": ["current_password", "new_password"],
+        "properties": {
+          "current_password": {
+            "type": "string",
+            "example": "secret123"
+          },
+          "new_password": {
+            "type": "string",
+            "minLength": 8,
+            "example": "newSecret123"
           }
         }
       },
@@ -792,6 +1706,220 @@
           }
         }
       },
+      "Organizer": {
+        "type": "object",
+        "required": ["id", "name", "slug", "created_at", "updated_at"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "OrganizerSummary": {
+        "type": "object",
+        "required": ["id", "name", "slug", "admin_count", "event_count", "session_count", "created_at", "updated_at"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "admin_count": {
+            "type": "integer",
+            "example": 1
+          },
+          "event_count": {
+            "type": "integer",
+            "example": 3
+          },
+          "session_count": {
+            "type": "integer",
+            "example": 7
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "OrganizerListItem": {
+        "type": "object",
+        "required": ["id", "name", "slug", "admin_count", "event_count", "session_count", "created_at", "updated_at", "admin"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "admin_count": {
+            "type": "integer",
+            "example": 1
+          },
+          "event_count": {
+            "type": "integer",
+            "example": 3
+          },
+          "session_count": {
+            "type": "integer",
+            "example": 7
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "admin": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrganizerAdmin"
+              }
+            ],
+            "nullable": true
+          }
+        }
+      },
+      "OrganizerDetail": {
+        "type": "object",
+        "required": ["organizer", "events"],
+        "properties": {
+          "organizer": {
+            "$ref": "#/components/schemas/OrganizerListItem"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrganizerManagedEvent"
+            }
+          }
+        }
+      },
+      "OrganizerManagedEvent": {
+        "type": "object",
+        "required": ["id", "title", "slug", "status", "currency", "city", "country", "session_count", "ticket_type_count", "created_at", "updated_at"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["draft", "published", "cancelled"]
+          },
+          "currency": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          },
+          "session_count": {
+            "type": "integer",
+            "example": 2
+          },
+          "ticket_type_count": {
+            "type": "integer",
+            "example": 5
+          },
+          "next_session_starts_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "OrganizerAdmin": {
+        "type": "object",
+        "required": ["id", "name", "email", "role", "organizer_id", "created_at", "updated_at"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["organizer_admin"]
+          },
+          "organizer_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateOrganizerAdminResult": {
+        "type": "object",
+        "required": ["organizer", "admin"],
+        "properties": {
+          "organizer": {
+            "$ref": "#/components/schemas/Organizer"
+          },
+          "admin": {
+            "$ref": "#/components/schemas/OrganizerAdmin"
+          }
+        }
+      },
       "Category": {
         "type": "object",
         "required": ["id", "name", "slug", "created_at", "updated_at"],
@@ -804,6 +1932,9 @@
             "type": "string"
           },
           "slug": {
+            "type": "string"
+          },
+          "description": {
             "type": "string"
           },
           "image_url": {
@@ -853,12 +1984,22 @@
           "city": {
             "type": "string"
           },
-          "country": {
-            "type": "string"
-          },
-          "banner_url": {
-            "type": "string"
-          },
+            "country": {
+              "type": "string"
+            },
+            "latitude": {
+              "type": "number",
+              "format": "double",
+              "nullable": true
+            },
+            "longitude": {
+              "type": "number",
+              "format": "double",
+              "nullable": true
+            },
+            "banner_url": {
+              "type": "string"
+            },
           "poster_url": {
             "type": "string"
           },
@@ -881,6 +2022,291 @@
             "format": "date-time"
           }
         }
+      },
+      "EventSession": {
+        "type": "object",
+        "required": ["id", "event_id", "starts_at", "ends_at", "status", "created_at", "updated_at"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "event_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ends_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sales_starts_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "sales_ends_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": ["scheduled", "completed", "cancelled"]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "TicketType": {
+        "type": "object",
+        "required": ["id", "event_session_id", "name", "price", "quantity", "max_per_order", "created_at", "updated_at"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "event_session_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          },
+          "quantity": {
+            "type": "integer"
+          },
+          "max_per_order": {
+            "type": "integer"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "EventSessionDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/EventSession"
+          },
+          {
+            "type": "object",
+            "required": ["ticket_types"],
+            "properties": {
+              "ticket_types": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TicketType"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "EventDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Event"
+          },
+          {
+            "type": "object",
+            "required": ["sessions"],
+            "properties": {
+              "sessions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/EventSessionDetail"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "PublicEvent": {
+        "type": "object",
+        "required": [
+          "id",
+          "organizer_id",
+          "organizer_name",
+          "organizer_slug",
+          "category_id",
+          "category_name",
+          "category_slug",
+          "title",
+          "slug",
+          "summary",
+          "description",
+          "venue_name",
+          "venue_address",
+          "city",
+          "country",
+          "status",
+          "currency",
+          "is_featured",
+          "price_from",
+          "tickets_left",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "organizer_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "organizer_name": {
+            "type": "string"
+          },
+          "organizer_slug": {
+            "type": "string"
+          },
+          "category_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "category_name": {
+            "type": "string"
+          },
+          "category_slug": {
+            "type": "string"
+          },
+          "category_description": {
+            "type": "string"
+          },
+          "category_image_url": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "venue_name": {
+            "type": "string"
+          },
+          "venue_address": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          },
+          "latitude": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "banner_url": {
+            "type": "string"
+          },
+          "poster_url": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["draft", "published", "cancelled"]
+          },
+          "currency": {
+            "type": "string"
+          },
+          "is_featured": {
+            "type": "boolean"
+          },
+          "next_session_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "next_session_starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "next_session_ends_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "next_sales_starts_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "next_sales_ends_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "price_from": {
+            "type": "number",
+            "example": 35
+          },
+          "tickets_left": {
+            "type": "integer",
+            "example": 84
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PublicEventDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PublicEvent"
+          },
+          {
+            "type": "object",
+            "required": ["sessions"],
+            "properties": {
+              "sessions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/EventSessionDetail"
+                }
+              }
+            }
+          }
+        ]
       },
       "AuthResult": {
         "type": "object",

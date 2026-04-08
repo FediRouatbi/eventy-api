@@ -2,6 +2,7 @@ package app
 
 import (
 	"database/sql"
+	"eventy-api/internal/admins"
 	"eventy-api/internal/auth"
 	"eventy-api/internal/categories"
 	"eventy-api/internal/config"
@@ -38,19 +39,22 @@ func New(cfg config.Config) (*App, error) {
 	authRepository := auth.NewRepository(queries)
 	authService := auth.NewService(authRepository, tokenManager, registrationMailer, cfg.RegisterOTPTTL, cfg.RefreshTokenTTL)
 	authHandler := auth.NewHandler(authService)
+	adminsRepository := admins.NewRepository(postgresDB)
+	adminsService := admins.NewService(adminsRepository)
+	adminsHandler := admins.NewHandler(adminsService)
 	categoriesRepository := categories.NewRepository(queries)
-	categoriesService := categories.NewService(categoriesRepository)
-	categoriesHandler := categories.NewHandler(categoriesService)
-	eventsRepository := events.NewRepository(queries)
+	eventsRepository := events.NewRepository(postgresDB, queries)
 	eventsService := events.NewService(eventsRepository)
 	eventsHandler := events.NewHandler(eventsService)
+	categoriesService := categories.NewService(categoriesRepository, eventsRepository)
+	categoriesHandler := categories.NewHandler(categoriesService)
 	usersRepository := users.NewRepository(queries)
 	usersService := users.NewService(usersRepository)
 	usersHandler := users.NewHandler(usersService)
 	authMiddleware := httpmiddleware.NewAuthMiddleware(tokenManager)
 
 	return &App{
-		Router: router.New(authHandler, categoriesHandler, eventsHandler, usersHandler, authMiddleware),
+		Router: router.New(adminsHandler, authHandler, categoriesHandler, eventsHandler, usersHandler, authMiddleware),
 		db:     postgresDB,
 	}, nil
 }

@@ -150,6 +150,10 @@ func (r *Repository) UpdateUserPasswordByEmail(ctx context.Context, email string
 	return r.queries.UpdateUserPasswordByEmail(ctx, passwordHash, normalizeEmail(email))
 }
 
+func (r *Repository) UpdateUserPasswordByID(ctx context.Context, userID uuid.UUID, passwordHash string) error {
+	return r.queries.UpdateUserPasswordByID(ctx, passwordHash, userID.String())
+}
+
 func (r *Repository) CreateSession(ctx context.Context, user User, refreshTokenHash string, expiresAt time.Time) error {
 	return r.queries.CreateAuthSession(ctx, sqlc.CreateAuthSessionParams{
 		ID:               uuid.New().String(),

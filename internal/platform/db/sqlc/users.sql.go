@@ -44,6 +44,12 @@ SET password_hash = ?
 WHERE email = ?
 `
 
+const updateUserPasswordByIDQuery = `
+UPDATE users
+SET password_hash = ?
+WHERE id = ?
+`
+
 const checkUserEmailExistsQuery = `
 SELECT EXISTS(
     SELECT 1
@@ -114,5 +120,10 @@ func (q *Queries) CheckUserEmailExists(ctx context.Context, email string) (bool,
 
 func (q *Queries) UpdateUserPasswordByEmail(ctx context.Context, passwordHash string, email string) error {
 	_, err := q.db.ExecContext(ctx, updateUserPasswordByEmailQuery, passwordHash, email)
+	return err
+}
+
+func (q *Queries) UpdateUserPasswordByID(ctx context.Context, passwordHash string, id string) error {
+	_, err := q.db.ExecContext(ctx, updateUserPasswordByIDQuery, passwordHash, id)
 	return err
 }

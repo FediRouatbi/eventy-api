@@ -15,6 +15,7 @@ var (
 	ErrPasswordResetNotFound = errors.New("no password reset request found for this email")
 	ErrPasswordResetExpired  = errors.New("password reset token has expired")
 	ErrPasswordResetInvalid  = errors.New("invalid password reset token")
+	ErrCurrentPasswordWrong  = errors.New("current password is incorrect")
 	ErrRefreshTokenRequired  = errors.New("refresh token is required")
 	ErrInvalidRefreshToken   = errors.New("invalid refresh token")
 	ErrSessionExpired        = errors.New("session has expired")

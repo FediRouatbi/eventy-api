@@ -80,6 +80,18 @@ func validateResetPasswordInput(input ResetPasswordInput) error {
 	return nil
 }
 
+func validateChangePasswordInput(input ChangePasswordInput) error {
+	if strings.TrimSpace(input.CurrentPassword) == "" {
+		return ErrCurrentPasswordWrong
+	}
+
+	if len(strings.TrimSpace(input.NewPassword)) < 8 {
+		return ErrInvalidPassword
+	}
+
+	return nil
+}
+
 func validateRefreshTokenInput(input RefreshTokenInput) error {
 	if strings.TrimSpace(input.RefreshToken) == "" {
 		return ErrRefreshTokenRequired
