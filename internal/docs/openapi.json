@@ -2034,6 +2034,55 @@
         }
       }
     },
+    "/v1/orders": {
+      "get": {
+        "tags": ["Orders"],
+        "summary": "List my checkout orders",
+        "description": "Returns the most recent checkout orders for the authenticated user (matched by email).",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Checkout orders",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CheckoutOrderSummary"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
     "/v1/users/me": {
       "get": {
         "tags": ["Users"],
@@ -3542,6 +3591,68 @@
         "properties": {
           "message": {
             "type": "string"
+          }
+        }
+      }
+      ,
+      "CheckoutOrderItem": {
+        "type": "object",
+        "required": [
+          "ticket_type_id",
+          "ticket_type_name",
+          "quantity",
+          "unit_price",
+          "currency",
+          "event_id",
+          "event_title",
+          "session_id",
+          "session_starts_at",
+          "session_ends_at"
+        ],
+        "properties": {
+          "ticket_type_id": { "type": "string", "format": "uuid" },
+          "ticket_type_name": { "type": "string" },
+          "quantity": { "type": "integer" },
+          "unit_price": { "type": "number" },
+          "currency": { "type": "string" },
+          "event_id": { "type": "string", "format": "uuid" },
+          "event_title": { "type": "string" },
+          "session_id": { "type": "string", "format": "uuid" },
+          "session_starts_at": { "type": "string", "format": "date-time" },
+          "session_ends_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CheckoutOrderSummary": {
+        "type": "object",
+        "required": [
+          "id",
+          "order_number",
+          "status",
+          "customer_name",
+          "customer_email",
+          "currency",
+          "subtotal",
+          "expires_at",
+          "created_at",
+          "updated_at",
+          "items"
+        ],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "order_number": { "type": "string" },
+          "status": { "type": "string" },
+          "customer_name": { "type": "string" },
+          "customer_email": { "type": "string", "format": "email" },
+          "currency": { "type": "string" },
+          "subtotal": { "type": "number" },
+          "expires_at": { "type": "string", "format": "date-time" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" },
+          "stripe_checkout_session_id": { "type": "string" },
+          "paid_at": { "type": "string", "format": "date-time", "nullable": true },
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CheckoutOrderItem" }
           }
         }
       }

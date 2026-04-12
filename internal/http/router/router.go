@@ -63,6 +63,8 @@ func New(adminsHandler *admins.Handler, authHandler *auth.Handler, categoriesHan
 			r.Get("/stripe-sessions/{stripeSessionID}/checkout-order", eventsHandler.GetCheckoutOrderByStripeSession)
 		})
 
+		r.With(authMiddleware.RequireAuth).Get("/orders", eventsHandler.ListMyCheckoutOrders)
+
 		r.Route("/admins", func(r chi.Router) {
 			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin, roles.OrganizerAdmin)).Get("/overview", adminsHandler.GetOverview)
 			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin)).Get("/organizers", adminsHandler.ListOrganizers)

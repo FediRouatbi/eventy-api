@@ -143,6 +143,10 @@ func (r *Repository) ListPublic(ctx context.Context) ([]PublicEvent, error) {
 				return nil, err
 			}
 
+			if len(ticketTypes) == 0 {
+				continue
+			}
+
 			detailSessions = append(detailSessions, EventSessionDetail{
 				EventSession: session,
 				TicketTypes:  ticketTypes,
@@ -150,6 +154,10 @@ func (r *Repository) ListPublic(ctx context.Context) ([]PublicEvent, error) {
 		}
 
 		item.Sessions = detailSessions
+
+		if len(item.Sessions) == 0 {
+			continue
+		}
 
 		items = append(items, item)
 	}
@@ -363,10 +371,18 @@ func (r *Repository) GetPublicDetailByID(ctx context.Context, eventID uuid.UUID)
 			return PublicEventDetail{}, err
 		}
 
+		if len(ticketTypes) == 0 {
+			continue
+		}
+
 		detailSessions = append(detailSessions, EventSessionDetail{
 			EventSession: session,
 			TicketTypes:  ticketTypes,
 		})
+	}
+
+	if len(detailSessions) == 0 {
+		return PublicEventDetail{}, ErrEventNotFound
 	}
 
 	event.Sessions = detailSessions
@@ -472,8 +488,45 @@ func (r *Repository) ListSessionsByEventID(ctx context.Context, eventID uuid.UUI
 }
 
 func (r *Repository) ListPublicSessionsByEventID(ctx context.Context, eventID uuid.UUID) ([]EventSession, error) {
-	dbSessions, err := r.queries.ListPublicEventSessionsByEventID(ctx, eventID.String())
+	rows, err := r.db.QueryContext(ctx, `
+SELECT id, event_id, starts_at, ends_at, sales_starts_at, sales_ends_at, status, created_at, updated_at
+FROM event_sessions es
+WHERE es.event_id = ?
+  AND es.status = 'scheduled'
+  AND es.ends_at >= UTC_TIMESTAMP()
+  AND (es.sales_starts_at IS NULL OR es.sales_starts_at <= UTC_TIMESTAMP())
+  AND (es.sales_ends_at IS NULL OR es.sales_ends_at >= UTC_TIMESTAMP())
+  AND EXISTS (
+      SELECT 1
+      FROM ticket_types tt
+      WHERE tt.event_session_id = es.id
+  )
+ORDER BY es.starts_at ASC, es.created_at ASC
+`, eventID.String())
 	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	dbSessions := make([]sqlc.EventSession, 0)
+	for rows.Next() {
+		var session sqlc.EventSession
+		if err := rows.Scan(
+			&session.ID,
+			&session.EventID,
+			&session.StartsAt,
+			&session.EndsAt,
+			&session.SalesStartsAt,
+			&session.SalesEndsAt,
+			&session.Status,
+			&session.CreatedAt,
+			&session.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		dbSessions = append(dbSessions, session)
+	}
+	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
@@ -993,12 +1046,24 @@ WITH next_sessions AS (
             ORDER BY es.starts_at ASC, es.created_at ASC
         ) AS row_num
     FROM event_sessions es
-    WHERE es.status = 'scheduled'`
+    WHERE es.status = 'scheduled'
+      AND es.ends_at >= UTC_TIMESTAMP()`
+
+	query += `
+      AND EXISTS (
+          SELECT 1
+          FROM ticket_types tt
+          WHERE tt.event_session_id = es.id
+      )`
 
 	if filterByEventID {
 		query += `
-      AND es.starts_at >= UTC_TIMESTAMP()`
+      AND es.ends_at >= UTC_TIMESTAMP()`
 	}
+
+	query += `
+      AND (es.sales_starts_at IS NULL OR es.sales_starts_at <= UTC_TIMESTAMP())
+      AND (es.sales_ends_at IS NULL OR es.sales_ends_at >= UTC_TIMESTAMP())`
 
 	query += `
 ),
@@ -1215,10 +1280,24 @@ type reservationTicketSnapshot struct {
 	AvailableQuantity int32
 }
 
+func (r *Repository) CompletePastEventSessions(ctx context.Context) error {
+	_, err := r.db.ExecContext(ctx, `
+UPDATE event_sessions
+SET status = 'completed'
+WHERE status = 'scheduled'
+  AND ends_at <= UTC_TIMESTAMP()
+`)
+	return err
+}
+
 func (r *Repository) CleanupExpiredReservations(ctx context.Context) error {
 	_, err := r.db.ExecContext(ctx, `
 DELETE FROM ticket_reservations
 WHERE expires_at <= UTC_TIMESTAMP()
+  AND id NOT IN (
+      SELECT reservation_id
+      FROM checkout_orders
+  )
 `)
 	return err
 }
@@ -1501,24 +1580,52 @@ func (r *Repository) GetReservation(ctx context.Context, reservationID uuid.UUID
 }
 
 func (r *Repository) DeleteReservation(ctx context.Context, reservationID uuid.UUID, reservationToken string) error {
-	result, err := r.db.ExecContext(ctx, `
+	reservationToken = strings.TrimSpace(reservationToken)
+
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	var existingID string
+	if err := tx.QueryRowContext(ctx, `
+SELECT id
+FROM ticket_reservations
+WHERE id = ?
+  AND token = ?
+LIMIT 1
+FOR UPDATE
+`, reservationID.String(), reservationToken).Scan(&existingID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrReservationNotFound
+		}
+		return err
+	}
+
+	// If a checkout order exists for this reservation, keep it.
+	// Deleting the reservation would cascade-delete the checkout order.
+	var checkoutOrderID string
+	if err := tx.QueryRowContext(ctx, `
+SELECT id
+FROM checkout_orders
+WHERE reservation_id = ?
+LIMIT 1
+`, reservationID.String()).Scan(&checkoutOrderID); err == nil {
+		return tx.Commit()
+	} else if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return err
+	}
+
+	if _, err := tx.ExecContext(ctx, `
 DELETE FROM ticket_reservations
 WHERE id = ?
   AND token = ?
-`, reservationID.String(), reservationToken)
-	if err != nil {
+`, reservationID.String(), reservationToken); err != nil {
 		return err
 	}
 
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rowsAffected == 0 {
-		return ErrReservationNotFound
-	}
-
-	return nil
+	return tx.Commit()
 }
 
 func (r *Repository) CreateCheckoutOrder(ctx context.Context, input CreateCheckoutOrderInput) (CheckoutOrder, error) {
@@ -2025,7 +2132,8 @@ FOR UPDATE
 
 	lineItems := make([]*stripe.CheckoutSessionLineItemParams, 0, len(order.Items))
 	for _, item := range order.Items {
-		unitAmount := int64(math.Round(item.UnitPrice * 100))
+		multiplier := stripeMinorUnitMultiplier(item.Currency)
+		unitAmount := int64(math.Round(item.UnitPrice * float64(multiplier)))
 		if unitAmount < 0 {
 			unitAmount = 0
 		}
@@ -2052,7 +2160,19 @@ FOR UPDATE
 		CustomerEmail:     stripe.String(order.CustomerEmail),
 		SuccessURL:        stripe.String(successURL),
 		CancelURL:         stripe.String(cancelURL),
-		ExpiresAt:         stripe.Int64(order.ExpiresAt.UTC().Unix()),
+		ExpiresAt: stripe.Int64(func() int64 {
+			now := time.Now().UTC()
+			minExpiry := now.Add(31 * time.Minute)
+			maxExpiry := now.Add(23 * time.Hour)
+			expiresAt := order.ExpiresAt.UTC()
+			if expiresAt.Before(minExpiry) {
+				expiresAt = minExpiry
+			}
+			if expiresAt.After(maxExpiry) {
+				expiresAt = maxExpiry
+			}
+			return expiresAt.Unix()
+		}()),
 		Metadata: map[string]string{
 			"order_id":     order.ID.String(),
 			"order_number": order.OrderNumber,
@@ -2103,6 +2223,192 @@ func (r *Repository) GetCheckoutOrderByStripeSessionID(ctx context.Context, stri
 	}
 
 	if err := tx.Commit(); err != nil {
+		return CheckoutOrderSummary{}, err
+	}
+
+	return order, nil
+}
+
+func (r *Repository) ListCheckoutOrdersByCustomerEmail(ctx context.Context, customerEmail string, limit int) ([]CheckoutOrderSummary, error) {
+	customerEmail = strings.TrimSpace(strings.ToLower(customerEmail))
+	if customerEmail == "" {
+		return []CheckoutOrderSummary{}, nil
+	}
+
+	if limit <= 0 {
+		limit = 20
+	}
+	if limit > 50 {
+		limit = 50
+	}
+
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	rows, err := tx.QueryContext(ctx, `
+SELECT id
+FROM checkout_orders
+WHERE customer_email = ?
+ORDER BY created_at DESC
+LIMIT ?
+`, customerEmail, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	orderIDs := make([]string, 0)
+	for rows.Next() {
+		var orderID string
+		if err := rows.Scan(&orderID); err != nil {
+			return nil, err
+		}
+		orderIDs = append(orderIDs, orderID)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	items := make([]CheckoutOrderSummary, 0, len(orderIDs))
+	for _, orderID := range orderIDs {
+		order, err := r.getCheckoutOrderSummaryByIDTx(ctx, tx, orderID)
+		if err != nil {
+			if errors.Is(err, ErrCheckoutOrderNotFound) {
+				continue
+			}
+			return nil, err
+		}
+		items = append(items, order)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return items, nil
+}
+
+func (r *Repository) getCheckoutOrderSummaryByIDTx(ctx context.Context, tx *sql.Tx, orderID string) (CheckoutOrderSummary, error) {
+	var (
+		order             CheckoutOrderSummary
+		orderIDText       string
+		stripeSessionIDDB sql.NullString
+		paidAt            sql.NullTime
+	)
+
+	if err := tx.QueryRowContext(ctx, `
+SELECT
+    id,
+    order_number,
+    status,
+    customer_name,
+    customer_email,
+    currency,
+    subtotal,
+    expires_at,
+    created_at,
+    updated_at,
+    stripe_checkout_session_id,
+    paid_at
+FROM checkout_orders
+WHERE id = ?
+LIMIT 1
+`, orderID).Scan(
+		&orderIDText,
+		&order.OrderNumber,
+		&order.Status,
+		&order.CustomerName,
+		&order.CustomerEmail,
+		&order.Currency,
+		&order.Subtotal,
+		&order.ExpiresAt,
+		&order.CreatedAt,
+		&order.UpdatedAt,
+		&stripeSessionIDDB,
+		&paidAt,
+	); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return CheckoutOrderSummary{}, ErrCheckoutOrderNotFound
+		}
+		return CheckoutOrderSummary{}, err
+	}
+
+	parsedOrderID, err := uuid.Parse(orderIDText)
+	if err != nil {
+		return CheckoutOrderSummary{}, err
+	}
+	order.ID = parsedOrderID
+	order.StripeSessionID = strings.TrimSpace(stripeSessionIDDB.String)
+	if paidAt.Valid {
+		paidAtCopy := paidAt.Time
+		order.PaidAt = &paidAtCopy
+	}
+
+	rows, err := tx.QueryContext(ctx, `
+SELECT
+    ticket_type_id,
+    ticket_type_name,
+    quantity,
+    unit_price,
+    currency,
+    event_id,
+    event_title,
+    session_id,
+    session_starts_at,
+    session_ends_at
+FROM checkout_order_items
+WHERE order_id = ?
+ORDER BY event_title ASC, session_starts_at ASC, ticket_type_name ASC
+`, orderIDText)
+	if err != nil {
+		return CheckoutOrderSummary{}, err
+	}
+	defer rows.Close()
+
+	order.Items = make([]CheckoutOrderItem, 0)
+	for rows.Next() {
+		var (
+			item             CheckoutOrderItem
+			ticketTypeIDText string
+			eventIDText      string
+			sessionIDText    string
+		)
+
+		if err := rows.Scan(
+			&ticketTypeIDText,
+			&item.TicketTypeName,
+			&item.Quantity,
+			&item.UnitPrice,
+			&item.Currency,
+			&eventIDText,
+			&item.EventTitle,
+			&sessionIDText,
+			&item.SessionStartsAt,
+			&item.SessionEndsAt,
+		); err != nil {
+			return CheckoutOrderSummary{}, err
+		}
+
+		item.TicketTypeID, err = uuid.Parse(ticketTypeIDText)
+		if err != nil {
+			return CheckoutOrderSummary{}, err
+		}
+		item.EventID, err = uuid.Parse(eventIDText)
+		if err != nil {
+			return CheckoutOrderSummary{}, err
+		}
+		item.SessionID, err = uuid.Parse(sessionIDText)
+		if err != nil {
+			return CheckoutOrderSummary{}, err
+		}
+
+		order.Items = append(order.Items, item)
+	}
+
+	if err := rows.Err(); err != nil {
 		return CheckoutOrderSummary{}, err
 	}
 
@@ -2241,7 +2547,9 @@ func (r *Repository) HandleStripeWebhook(ctx context.Context, stripeSecretKey st
 		return ErrStripeNotConfigured
 	}
 
-	event, err := webhook.ConstructEvent(payload, signature, webhookSecret)
+	event, err := webhook.ConstructEventWithOptions(payload, signature, webhookSecret, webhook.ConstructEventOptions{
+		IgnoreAPIVersionMismatch: true,
+	})
 	if err != nil {
 		return err
 	}
@@ -2282,13 +2590,52 @@ func (r *Repository) markCheckoutOrderExpiredByStripeSession(ctx context.Context
 		return nil
 	}
 
-	_, err := r.db.ExecContext(ctx, `
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	var (
+		reservationIDText string
+		status            string
+	)
+	if err := tx.QueryRowContext(ctx, `
+SELECT reservation_id, status
+FROM checkout_orders
+WHERE stripe_checkout_session_id = ?
+LIMIT 1
+FOR UPDATE
+`, stripeSessionID).Scan(&reservationIDText, &status); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+		return err
+	}
+
+	if status != "pending_payment" {
+		return tx.Commit()
+	}
+
+	if _, err := tx.ExecContext(ctx, `
 UPDATE checkout_orders
 SET status = 'expired'
 WHERE stripe_checkout_session_id = ?
   AND status = 'pending_payment'
-`, stripeSessionID)
-	return err
+`, stripeSessionID); err != nil {
+		return err
+	}
+
+	// Release held inventory by expiring the reservation immediately.
+	if _, err := tx.ExecContext(ctx, `
+UPDATE ticket_reservations
+SET expires_at = UTC_TIMESTAMP()
+WHERE id = ?
+`, reservationIDText); err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 func (r *Repository) markCheckoutOrderPaidByStripeSession(ctx context.Context, stripeSessionID string, paymentIntentID string, customerID string) error {
@@ -2384,6 +2731,16 @@ UPDATE ticket_reservations
 SET expires_at = ?
 WHERE id = ?
 `, keepUntil, reservationIDText); err != nil {
+		return err
+	}
+
+	// Reservation items are only meant to hold inventory pre-payment.
+	// After the order is paid we keep the reservation row for auditing, but drop the items
+	// so future holds don't double-count availability.
+	if _, err := tx.ExecContext(ctx, `
+DELETE FROM ticket_reservation_items
+WHERE reservation_id = ?
+`, reservationIDText); err != nil {
 		return err
 	}
 

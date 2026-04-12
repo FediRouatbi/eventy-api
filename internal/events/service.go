@@ -40,7 +40,7 @@ func (s *Service) Create(ctx context.Context, claims *jwt.Claims, input CreateEv
 	input.BannerURL = strings.TrimSpace(input.BannerURL)
 	input.PosterURL = strings.TrimSpace(input.PosterURL)
 	input.Status = strings.TrimSpace(input.Status)
-	input.Currency = strings.TrimSpace(strings.ToUpper(input.Currency))
+	input.Currency = "EUR"
 
 	if err := validateCreateEventInput(input); err != nil {
 		return Event{}, err
@@ -71,7 +71,7 @@ func (s *Service) Update(ctx context.Context, claims *jwt.Claims, eventID uuid.U
 	input.BannerURL = strings.TrimSpace(input.BannerURL)
 	input.PosterURL = strings.TrimSpace(input.PosterURL)
 	input.Status = strings.TrimSpace(input.Status)
-	input.Currency = strings.TrimSpace(strings.ToUpper(input.Currency))
+	input.Currency = "EUR"
 
 	if err := validateUpdateEventInput(input); err != nil {
 		return Event{}, err
@@ -212,6 +212,22 @@ func (s *Service) GetCheckoutOrderByStripeSessionID(ctx context.Context, stripeS
 	}
 
 	return s.repository.GetCheckoutOrderByStripeSessionID(ctx, stripeSessionID)
+}
+
+func (s *Service) ListCheckoutOrdersByCustomerEmail(ctx context.Context, customerEmail string, limit int) ([]CheckoutOrderSummary, error) {
+	customerEmail = strings.TrimSpace(strings.ToLower(customerEmail))
+	if customerEmail == "" {
+		return []CheckoutOrderSummary{}, nil
+	}
+
+	if limit <= 0 {
+		limit = 20
+	}
+	if limit > 50 {
+		limit = 50
+	}
+
+	return s.repository.ListCheckoutOrdersByCustomerEmail(ctx, customerEmail, limit)
 }
 
 func (s *Service) HandleStripeWebhook(ctx context.Context, payload []byte, signature string) error {

@@ -1,0 +1,3 @@
+ALTER TABLE events
+  ALTER COLUMN currency DROP DEFAULT;
+

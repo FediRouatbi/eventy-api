@@ -128,3 +128,8 @@ Authorization: Bearer {{token}}
 
 GET http://localhost:8080/v1/users/me
 Authorization: Bearer {{token}}
+
+###
+
+GET http://localhost:8080/v1/orders?limit=20
+Authorization: Bearer {{token}}

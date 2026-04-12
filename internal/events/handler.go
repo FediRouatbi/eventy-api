@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"math"
 	"net/http"
+	"strconv"
 	"strings"
 
 	httpmiddleware "eventy-api/internal/http/middleware"
@@ -371,6 +373,33 @@ func (h *Handler) GetCheckoutOrderByStripeSession(w http.ResponseWriter, r *http
 	}
 
 	responses.WriteJSON(w, http.StatusOK, order)
+}
+
+func (h *Handler) ListMyCheckoutOrders(w http.ResponseWriter, r *http.Request) {
+	claims, ok := httpmiddleware.ClaimsFromContext(r.Context())
+	if !ok {
+		responses.WriteError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	limit := 20
+	if rawLimit := strings.TrimSpace(r.URL.Query().Get("limit")); rawLimit != "" {
+		parsed, err := strconv.Atoi(rawLimit)
+		if err != nil || parsed <= 0 {
+			responses.WriteError(w, http.StatusBadRequest, "limit must be a positive integer")
+			return
+		}
+		limit = int(math.Min(float64(parsed), 50))
+	}
+
+	orders, err := h.service.ListCheckoutOrdersByCustomerEmail(r.Context(), claims.Email, limit)
+	if err != nil {
+		logger.RequestError(r, "events.list_my_checkout_orders", err)
+		responses.WriteError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+
+	responses.WriteJSON(w, http.StatusOK, orders)
 }
 
 func (h *Handler) StripeWebhook(w http.ResponseWriter, r *http.Request) {

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"database/sql"
 	"eventy-api/internal/admins"
 	"eventy-api/internal/auth"
@@ -14,12 +15,15 @@ import (
 	"eventy-api/internal/platform/email"
 	"eventy-api/internal/platform/jwt"
 	"eventy-api/internal/users"
+	"log"
 	"net/http"
+	"time"
 )
 
 type App struct {
 	Router http.Handler
 	db     *sql.DB
+	stop   context.CancelFunc
 }
 
 func New(cfg config.Config) (*App, error) {
@@ -58,13 +62,40 @@ func New(cfg config.Config) (*App, error) {
 	usersHandler := users.NewHandler(usersService)
 	authMiddleware := httpmiddleware.NewAuthMiddleware(tokenManager)
 
+	ctx, stop := context.WithCancel(context.Background())
+	startMaintenance(ctx, eventsRepository)
+
 	return &App{
 		Router: router.New(adminsHandler, authHandler, categoriesHandler, eventsHandler, usersHandler, authMiddleware),
 		db:     postgresDB,
+		stop:   stop,
 	}, nil
 }
 
+func startMaintenance(ctx context.Context, eventsRepository *events.Repository) {
+	ticker := time.NewTicker(1 * time.Minute)
+
+	go func() {
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				if err := eventsRepository.CompletePastEventSessions(context.Background()); err != nil {
+					log.Printf("maintenance: complete past sessions: %v", err)
+				}
+			}
+		}
+	}()
+}
+
 func (a *App) Close() error {
+	if a.stop != nil {
+		a.stop()
+	}
+
 	if a.db == nil {
 		return nil
 	}
