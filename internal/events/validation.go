@@ -144,3 +144,24 @@ func validateTicketTypeInput(name string, price float64, quantity int32, maxPerO
 
 	return nil
 }
+
+func validateCreateCheckoutOrderInput(input CreateCheckoutOrderInput) error {
+	if strings.TrimSpace(input.ReservationID) == "" {
+		return ErrInvalidReservationID
+	}
+
+	if strings.TrimSpace(input.ReservationToken) == "" {
+		return ErrInvalidReservationToken
+	}
+
+	if strings.TrimSpace(input.CustomerName) == "" {
+		return ErrInvalidCustomerName
+	}
+
+	email := strings.TrimSpace(strings.ToLower(input.CustomerEmail))
+	if email == "" || !strings.Contains(email, "@") {
+		return ErrInvalidCustomerEmail
+	}
+
+	return nil
+}

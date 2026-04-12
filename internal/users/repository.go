@@ -4,10 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 
 	"eventy-api/internal/platform/db/sqlc"
 
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Repository struct {
@@ -52,4 +54,45 @@ func (r *Repository) GetProfileByID(ctx context.Context, userID uuid.UUID) (Prof
 		CreatedAt:   dbUser.CreatedAt,
 		UpdatedAt:   dbUser.UpdatedAt,
 	}, nil
+}
+
+func (r *Repository) UpdateProfile(ctx context.Context, userID uuid.UUID, input UpdateProfileInput) (Profile, error) {
+	email := strings.TrimSpace(strings.ToLower(input.Email))
+	name := strings.TrimSpace(input.Name)
+
+	existingUser, err := r.queries.GetUserByEmail(ctx, email)
+	if err == nil && existingUser.ID != userID.String() {
+		return Profile{}, ErrEmailAlreadyExists
+	}
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return Profile{}, err
+	}
+
+	err = r.queries.UpdateUserProfile(ctx, sqlc.UpdateUserProfileParams{
+		Name:  name,
+		Email: email,
+		ID:    userID.String(),
+	})
+	if err != nil {
+		return Profile{}, err
+	}
+
+	return r.GetProfileByID(ctx, userID)
+}
+
+func (r *Repository) DeleteProfileWithPassword(ctx context.Context, userID uuid.UUID, input DeleteAccountInput) error {
+	dbUser, err := r.queries.GetUserByID(ctx, userID.String())
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrUserNotFound
+		}
+
+		return err
+	}
+
+	if bcrypt.CompareHashAndPassword([]byte(dbUser.PasswordHash), []byte(strings.TrimSpace(input.CurrentPassword))) != nil {
+		return ErrCurrentPasswordWrong
+	}
+
+	return r.queries.DeleteUserByID(ctx, userID.String())
 }

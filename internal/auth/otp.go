@@ -9,7 +9,7 @@ import (
 func generateOTPCode() (string, error) {
 	var builder strings.Builder
 
-	for range 6 {
+	for range 4 {
 		number, err := rand.Int(rand.Reader, big.NewInt(10))
 		if err != nil {
 			return "", err

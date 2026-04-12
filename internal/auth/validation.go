@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-var otpPattern = regexp.MustCompile(`^\d{6}$`)
+var otpPattern = regexp.MustCompile(`^\d{4}$`)
 
 func validateRegisterInput(input RegisterInput) error {
 	if strings.TrimSpace(input.Name) == "" {

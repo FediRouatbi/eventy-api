@@ -24,6 +24,12 @@ type UpdateOrganizerAdminInput struct {
 	AdminEmail string `json:"admin_email"`
 }
 
+type AddOrganizerAdminInput struct {
+	AdminName     string `json:"admin_name"`
+	AdminEmail    string `json:"admin_email"`
+	AdminPassword string `json:"admin_password"`
+}
+
 type ResetOrganizerAdminPasswordInput struct {
 	Password string `json:"password"`
 }
@@ -61,6 +67,7 @@ type OrganizerListItem struct {
 
 type OrganizerDetail struct {
 	Organizer OrganizerListItem       `json:"organizer"`
+	Admins    []OrganizerAdmin        `json:"admins"`
 	Events    []OrganizerManagedEvent `json:"events"`
 }
 

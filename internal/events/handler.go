@@ -3,7 +3,9 @@ package events
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
+	"strings"
 
 	httpmiddleware "eventy-api/internal/http/middleware"
 	"eventy-api/internal/http/responses"
@@ -217,6 +219,187 @@ func (h *Handler) GetPublicByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	responses.WriteJSON(w, http.StatusOK, event)
+}
+
+func (h *Handler) UpsertReservation(w http.ResponseWriter, r *http.Request) {
+	var input UpsertTicketReservationInput
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+
+	if err := decoder.Decode(&input); err != nil {
+		logger.RequestError(r, "events.upsert_reservation.decode", err)
+		responses.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	reservation, err := h.service.UpsertReservation(r.Context(), input)
+	if err != nil {
+		h.writeReservationError(w, r, "events.upsert_reservation", err)
+		return
+	}
+
+	responses.WriteJSON(w, http.StatusOK, reservation)
+}
+
+func (h *Handler) GetReservation(w http.ResponseWriter, r *http.Request) {
+	reservationID, err := uuid.Parse(chi.URLParam(r, "reservationID"))
+	if err != nil {
+		responses.WriteError(w, http.StatusBadRequest, ErrInvalidReservationID.Error())
+		return
+	}
+
+	reservation, err := h.service.GetReservation(r.Context(), reservationID, r.URL.Query().Get("token"))
+	if err != nil {
+		h.writeReservationError(w, r, "events.get_reservation", err)
+		return
+	}
+
+	responses.WriteJSON(w, http.StatusOK, reservation)
+}
+
+func (h *Handler) DeleteReservation(w http.ResponseWriter, r *http.Request) {
+	reservationID, err := uuid.Parse(chi.URLParam(r, "reservationID"))
+	if err != nil {
+		responses.WriteError(w, http.StatusBadRequest, ErrInvalidReservationID.Error())
+		return
+	}
+
+	if err := h.service.DeleteReservation(r.Context(), reservationID, r.URL.Query().Get("token")); err != nil {
+		h.writeReservationError(w, r, "events.delete_reservation", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) CreateCheckoutOrder(w http.ResponseWriter, r *http.Request) {
+	var input CreateCheckoutOrderInput
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+
+	if err := decoder.Decode(&input); err != nil {
+		logger.RequestError(r, "events.create_checkout_order.decode", err)
+		responses.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	order, err := h.service.CreateCheckoutOrder(r.Context(), input)
+	if err != nil {
+		h.writeCheckoutOrderError(w, r, "events.create_checkout_order", err)
+		return
+	}
+
+	responses.WriteJSON(w, http.StatusCreated, order)
+}
+
+func (h *Handler) GetCheckoutOrder(w http.ResponseWriter, r *http.Request) {
+	orderID, err := uuid.Parse(chi.URLParam(r, "orderID"))
+	if err != nil {
+		responses.WriteError(w, http.StatusBadRequest, "invalid order id")
+		return
+	}
+
+	order, err := h.service.GetCheckoutOrder(r.Context(), orderID, r.URL.Query().Get("token"))
+	if err != nil {
+		h.writeCheckoutOrderError(w, r, "events.get_checkout_order", err)
+		return
+	}
+
+	responses.WriteJSON(w, http.StatusOK, order)
+}
+
+func (h *Handler) CreateStripeCheckoutSession(w http.ResponseWriter, r *http.Request) {
+	orderID, err := uuid.Parse(chi.URLParam(r, "orderID"))
+	if err != nil {
+		responses.WriteError(w, http.StatusBadRequest, "invalid order id")
+		return
+	}
+
+	var input CreateStripeCheckoutSessionInput
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+
+	if err := decoder.Decode(&input); err != nil {
+		logger.RequestError(r, "events.create_stripe_checkout_session.decode", err)
+		responses.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	input.OrderToken = strings.TrimSpace(input.OrderToken)
+	if input.OrderToken == "" {
+		responses.WriteError(w, http.StatusBadRequest, ErrInvalidOrderToken.Error())
+		return
+	}
+
+	session, err := h.service.CreateStripeCheckoutSession(r.Context(), orderID, input.OrderToken)
+	if err != nil {
+		logger.RequestError(r, "events.create_stripe_checkout_session", err)
+
+		switch {
+		case errors.Is(err, ErrInvalidOrderToken), errors.Is(err, ErrCheckoutOrderNotFound):
+			responses.WriteError(w, http.StatusNotFound, err.Error())
+		case errors.Is(err, ErrUnsupportedCurrency):
+			responses.WriteError(w, http.StatusBadRequest, err.Error())
+		case errors.Is(err, ErrStripeNotConfigured):
+			responses.WriteError(w, http.StatusNotImplemented, err.Error())
+		case errors.Is(err, ErrCheckoutOrderNotPayable):
+			responses.WriteError(w, http.StatusConflict, err.Error())
+		default:
+			responses.WriteError(w, http.StatusInternalServerError, "internal server error")
+		}
+		return
+	}
+
+	responses.WriteJSON(w, http.StatusCreated, session)
+}
+
+func (h *Handler) GetCheckoutOrderByStripeSession(w http.ResponseWriter, r *http.Request) {
+	stripeSessionID := chi.URLParam(r, "stripeSessionID")
+	order, err := h.service.GetCheckoutOrderByStripeSessionID(r.Context(), stripeSessionID)
+	if err != nil {
+		logger.RequestError(r, "events.get_checkout_order_by_stripe_session", err)
+
+		switch {
+		case errors.Is(err, ErrInvalidStripeSessionID):
+			responses.WriteError(w, http.StatusBadRequest, err.Error())
+		case errors.Is(err, ErrCheckoutOrderNotFound):
+			responses.WriteError(w, http.StatusNotFound, err.Error())
+		default:
+			responses.WriteError(w, http.StatusInternalServerError, "internal server error")
+		}
+		return
+	}
+
+	responses.WriteJSON(w, http.StatusOK, order)
+}
+
+func (h *Handler) StripeWebhook(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 1<<20))
+	if err != nil {
+		logger.RequestError(r, "events.stripe_webhook.read", err)
+		responses.WriteError(w, http.StatusBadRequest, "invalid payload")
+		return
+	}
+
+	signature := r.Header.Get("Stripe-Signature")
+	if signature == "" {
+		responses.WriteError(w, http.StatusBadRequest, "missing stripe signature")
+		return
+	}
+
+	if err := h.service.HandleStripeWebhook(r.Context(), body, signature); err != nil {
+		logger.RequestError(r, "events.stripe_webhook", err)
+
+		switch {
+		case errors.Is(err, ErrStripeNotConfigured):
+			responses.WriteError(w, http.StatusNotImplemented, err.Error())
+		default:
+			responses.WriteError(w, http.StatusBadRequest, "webhook error")
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func (h *Handler) GetByID(w http.ResponseWriter, r *http.Request) {
@@ -543,6 +726,46 @@ func (h *Handler) writeTicketTypeError(w http.ResponseWriter, r *http.Request, l
 		responses.WriteError(w, http.StatusNotFound, err.Error())
 	case errors.Is(err, ErrForbidden), errors.Is(err, ErrUnsupportedRole), errors.Is(err, ErrOrganizerScopeRequired):
 		responses.WriteError(w, http.StatusForbidden, err.Error())
+	default:
+		responses.WriteError(w, http.StatusInternalServerError, "internal server error")
+	}
+}
+
+func (h *Handler) writeReservationError(w http.ResponseWriter, r *http.Request, logKey string, err error) {
+	logger.RequestError(r, logKey, err)
+
+	switch {
+	case errors.Is(err, ErrInvalidReservationID),
+		errors.Is(err, ErrInvalidReservationToken),
+		errors.Is(err, ErrInvalidReservationItems),
+		errors.Is(err, ErrInvalidTicketTypeID),
+		errors.Is(err, ErrInvalidTicketQuantity):
+		responses.WriteError(w, http.StatusBadRequest, err.Error())
+	case errors.Is(err, ErrReservationUnavailable),
+		errors.Is(err, ErrReservationMaxPerOrder),
+		errors.Is(err, ErrTicketSalesUnavailable):
+		responses.WriteError(w, http.StatusConflict, err.Error())
+	case errors.Is(err, ErrReservationNotFound):
+		responses.WriteError(w, http.StatusNotFound, err.Error())
+	case errors.Is(err, ErrTicketTypeNotFound):
+		responses.WriteError(w, http.StatusBadRequest, err.Error())
+	default:
+		responses.WriteError(w, http.StatusInternalServerError, "internal server error")
+	}
+}
+
+func (h *Handler) writeCheckoutOrderError(w http.ResponseWriter, r *http.Request, logKey string, err error) {
+	logger.RequestError(r, logKey, err)
+
+	switch {
+	case errors.Is(err, ErrInvalidReservationID),
+		errors.Is(err, ErrInvalidReservationToken),
+		errors.Is(err, ErrInvalidCustomerName),
+		errors.Is(err, ErrInvalidCustomerEmail),
+		errors.Is(err, ErrInvalidOrderToken):
+		responses.WriteError(w, http.StatusBadRequest, err.Error())
+	case errors.Is(err, ErrReservationNotFound), errors.Is(err, ErrCheckoutOrderNotFound):
+		responses.WriteError(w, http.StatusNotFound, err.Error())
 	default:
 		responses.WriteError(w, http.StatusInternalServerError, "internal server error")
 	}

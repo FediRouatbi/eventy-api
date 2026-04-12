@@ -27,6 +27,10 @@ FROM users
 WHERE id = ?
 LIMIT 1;
 
+-- name: DeleteUserByID :exec
+DELETE FROM users
+WHERE id = ?;
+
 -- name: UpdateUserPasswordByEmail :exec
 UPDATE users
 SET password_hash = ?

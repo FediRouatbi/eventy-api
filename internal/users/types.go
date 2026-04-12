@@ -15,3 +15,12 @@ type Profile struct {
 	CreatedAt   time.Time  `json:"created_at"`
 	UpdatedAt   time.Time  `json:"updated_at"`
 }
+
+type UpdateProfileInput struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+
+type DeleteAccountInput struct {
+	CurrentPassword string `json:"current_password"`
+}

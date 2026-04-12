@@ -44,7 +44,12 @@ func New(cfg config.Config) (*App, error) {
 	adminsHandler := admins.NewHandler(adminsService)
 	categoriesRepository := categories.NewRepository(queries)
 	eventsRepository := events.NewRepository(postgresDB, queries)
-	eventsService := events.NewService(eventsRepository)
+	eventsService := events.NewService(eventsRepository, events.StripeConfig{
+		SecretKey:     cfg.StripeSecretKey,
+		WebhookSecret: cfg.StripeWebhookKey,
+		SuccessURL:    cfg.StripeSuccessURL,
+		CancelURL:     cfg.StripeCancelURL,
+	})
 	eventsHandler := events.NewHandler(eventsService)
 	categoriesService := categories.NewService(categoriesRepository, eventsRepository)
 	categoriesHandler := categories.NewHandler(categoriesService)

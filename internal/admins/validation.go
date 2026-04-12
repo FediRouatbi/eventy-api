@@ -53,6 +53,22 @@ func validateUpdateOrganizerAdminInput(input UpdateOrganizerAdminInput) error {
 	return nil
 }
 
+func validateAddOrganizerAdminInput(input AddOrganizerAdminInput) error {
+	if strings.TrimSpace(input.AdminName) == "" {
+		return ErrInvalidAdminName
+	}
+
+	if !isValidEmail(input.AdminEmail) {
+		return ErrInvalidAdminEmail
+	}
+
+	if len(strings.TrimSpace(input.AdminPassword)) < 8 {
+		return ErrInvalidAdminPassword
+	}
+
+	return nil
+}
+
 func validateResetOrganizerAdminPasswordInput(input ResetOrganizerAdminPasswordInput) error {
 	if len(strings.TrimSpace(input.Password)) < 8 {
 		return ErrInvalidAdminPassword

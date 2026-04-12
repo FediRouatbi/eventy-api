@@ -579,8 +579,13 @@ LEFT JOIN (
     GROUP BY e.organizer_id
 ) sc ON sc.organizer_id = o.id
 LEFT JOIN users u
-    ON u.organizer_id = o.id
-   AND u.role = ?
+    ON u.id = (
+        SELECT ua.id
+        FROM users ua
+        WHERE ua.organizer_id = o.id AND ua.role = ?
+        ORDER BY ua.created_at ASC, ua.id ASC
+        LIMIT 1
+    )
 ORDER BY o.name ASC
 `, roles.OrganizerAdmin, roles.OrganizerAdmin)
 	if err != nil {
@@ -660,25 +665,14 @@ ORDER BY o.name ASC
 func (r *Repository) GetOrganizer(ctx context.Context, organizerID uuid.UUID) (OrganizerDetail, error) {
 	var item OrganizerDetail
 	var organizerIDText string
-	var adminID sql.NullString
-	var adminName sql.NullString
-	var adminEmail sql.NullString
-	var adminRole sql.NullString
-	var adminOrganizerID sql.NullString
-	var adminCreatedAt sql.NullTime
-	var adminUpdatedAt sql.NullTime
 
 	err := r.db.QueryRowContext(ctx, `
 SELECT o.id, o.name, o.slug,
        COALESCE(ac.admin_count, 0) AS admin_count,
        COALESCE(ec.event_count, 0) AS event_count,
        COALESCE(sc.session_count, 0) AS session_count,
-       o.created_at, o.updated_at,
-       u.id, u.name, u.email, u.role, u.organizer_id, u.created_at, u.updated_at
+       o.created_at, o.updated_at
 FROM organizers o
-LEFT JOIN users u
-    ON u.organizer_id = o.id
-   AND u.role = ?
 LEFT JOIN (
     SELECT organizer_id, COUNT(*) AS admin_count
     FROM users
@@ -698,7 +692,7 @@ LEFT JOIN (
 ) sc ON sc.organizer_id = o.id
 WHERE o.id = ?
 LIMIT 1
-`, roles.OrganizerAdmin, roles.OrganizerAdmin, organizerID.String()).Scan(
+`, roles.OrganizerAdmin, organizerID.String()).Scan(
 		&organizerIDText,
 		&item.Organizer.Name,
 		&item.Organizer.Slug,
@@ -707,13 +701,6 @@ LIMIT 1
 		&item.Organizer.SessionCount,
 		&item.Organizer.CreatedAt,
 		&item.Organizer.UpdatedAt,
-		&adminID,
-		&adminName,
-		&adminEmail,
-		&adminRole,
-		&adminOrganizerID,
-		&adminCreatedAt,
-		&adminUpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -728,31 +715,12 @@ LIMIT 1
 		return OrganizerDetail{}, err
 	}
 
-	if adminID.Valid {
-		admin := OrganizerAdmin{
-			Name:  adminName.String,
-			Email: adminEmail.String,
-			Role:  adminRole.String,
-		}
-
-		admin.ID, err = uuid.Parse(adminID.String)
-		if err != nil {
-			return OrganizerDetail{}, err
-		}
-
-		admin.OrganizerID, err = uuid.Parse(adminOrganizerID.String)
-		if err != nil {
-			return OrganizerDetail{}, err
-		}
-
-		if adminCreatedAt.Valid {
-			admin.CreatedAt = adminCreatedAt.Time
-		}
-		if adminUpdatedAt.Valid {
-			admin.UpdatedAt = adminUpdatedAt.Time
-		}
-
-		item.Organizer.Admin = &admin
+	item.Admins, err = r.ListOrganizerAdmins(ctx, organizerID)
+	if err != nil {
+		return OrganizerDetail{}, err
+	}
+	if len(item.Admins) > 0 {
+		item.Organizer.Admin = &item.Admins[0]
 	}
 
 	rows, err := r.db.QueryContext(ctx, `
@@ -817,69 +785,116 @@ ORDER BY e.created_at DESC, e.title ASC
 	return item, nil
 }
 
-func (r *Repository) GetOrganizerAdmin(ctx context.Context, organizerID uuid.UUID) (OrganizerAdmin, error) {
-	var exists bool
-	err := r.db.QueryRowContext(ctx, `
-SELECT EXISTS(
-    SELECT 1
-    FROM organizers
-    WHERE id = ?
-)
-`, organizerID.String()).Scan(&exists)
+func (r *Repository) ListOrganizerAdmins(ctx context.Context, organizerID uuid.UUID) ([]OrganizerAdmin, error) {
+	if err := r.ensureOrganizerExists(ctx, organizerID); err != nil {
+		return nil, err
+	}
+
+	rows, err := r.db.QueryContext(ctx, `
+SELECT id, name, email, role, organizer_id, created_at, updated_at
+FROM users
+WHERE organizer_id = ? AND role = ?
+ORDER BY created_at ASC, name ASC
+`, organizerID.String(), roles.OrganizerAdmin)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var items []OrganizerAdmin
+	for rows.Next() {
+		item, err := scanOrganizerAdmin(rows)
+		if err != nil {
+			return nil, err
+		}
+
+		items = append(items, item)
+	}
+
+	return items, rows.Err()
+}
+
+func (r *Repository) AddOrganizerAdmin(ctx context.Context, organizerID uuid.UUID, input AddOrganizerAdminInput) (OrganizerAdmin, error) {
+	if err := r.ensureOrganizerExists(ctx, organizerID); err != nil {
+		return OrganizerAdmin{}, err
+	}
+
+	passwordHash, err := hashPassword(input.AdminPassword)
 	if err != nil {
 		return OrganizerAdmin{}, err
 	}
-	if !exists {
-		return OrganizerAdmin{}, ErrOrganizerNotFound
+
+	adminID := uuid.New()
+	_, err = r.db.ExecContext(ctx, `
+INSERT INTO users (
+    id,
+    name,
+    email,
+    password_hash,
+    role,
+    organizer_id
+) VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+)
+`,
+		adminID.String(),
+		input.AdminName,
+		input.AdminEmail,
+		passwordHash,
+		roles.OrganizerAdmin,
+		organizerID.String(),
+	)
+	if err != nil {
+		if isUniqueViolation(err) {
+			return OrganizerAdmin{}, ErrAdminEmailExists
+		}
+
+		return OrganizerAdmin{}, err
+	}
+
+	return r.GetOrganizerAdmin(ctx, organizerID, adminID)
+}
+
+func (r *Repository) GetOrganizerAdmin(ctx context.Context, organizerID uuid.UUID, adminID uuid.UUID) (OrganizerAdmin, error) {
+	if err := r.ensureOrganizerExists(ctx, organizerID); err != nil {
+		return OrganizerAdmin{}, err
 	}
 
 	row := r.db.QueryRowContext(ctx, `
 SELECT id, name, email, role, organizer_id, created_at, updated_at
 FROM users
-WHERE organizer_id = ? AND role = ?
-`, organizerID.String(), roles.OrganizerAdmin)
+WHERE organizer_id = ? AND id = ? AND role = ?
+LIMIT 1
+`, organizerID.String(), adminID.String(), roles.OrganizerAdmin)
 
-	var item OrganizerAdmin
-	var adminID string
-	var adminOrganizerID string
-	if err := row.Scan(
-		&adminID,
-		&item.Name,
-		&item.Email,
-		&item.Role,
-		&adminOrganizerID,
-		&item.CreatedAt,
-		&item.UpdatedAt,
-	); err != nil {
+	item, err := scanOrganizerAdmin(row)
+	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return OrganizerAdmin{}, ErrOrganizerAdminNotFound
 		}
-		return OrganizerAdmin{}, err
-	}
 
-	item.ID, err = uuid.Parse(adminID)
-	if err != nil {
-		return OrganizerAdmin{}, err
-	}
-
-	item.OrganizerID, err = uuid.Parse(adminOrganizerID)
-	if err != nil {
 		return OrganizerAdmin{}, err
 	}
 
 	return item, nil
 }
 
-func (r *Repository) UpdateOrganizerAdmin(ctx context.Context, organizerID uuid.UUID, input UpdateOrganizerAdminInput) (OrganizerAdmin, error) {
+func (r *Repository) UpdateOrganizerAdmin(ctx context.Context, organizerID uuid.UUID, adminID uuid.UUID, input UpdateOrganizerAdminInput) (OrganizerAdmin, error) {
 	result, err := r.db.ExecContext(ctx, `
 UPDATE users
 SET name = ?,
     email = ?
-WHERE organizer_id = ? AND role = ?
+WHERE organizer_id = ? AND id = ? AND role = ?
 `,
 		input.AdminName,
 		input.AdminEmail,
 		organizerID.String(),
+		adminID.String(),
 		roles.OrganizerAdmin,
 	)
 	if err != nil {
@@ -896,28 +911,13 @@ WHERE organizer_id = ? AND role = ?
 	}
 
 	if rowsAffected == 0 {
-		var exists bool
-		err = r.db.QueryRowContext(ctx, `
-SELECT EXISTS(
-    SELECT 1
-    FROM organizers
-    WHERE id = ?
-)
-`, organizerID.String()).Scan(&exists)
-		if err != nil {
-			return OrganizerAdmin{}, err
-		}
-		if !exists {
-			return OrganizerAdmin{}, ErrOrganizerNotFound
-		}
-
-		return OrganizerAdmin{}, ErrOrganizerAdminNotFound
+		return OrganizerAdmin{}, r.ensureOrganizerAdminExists(ctx, organizerID, adminID)
 	}
 
-	return r.GetOrganizerAdmin(ctx, organizerID)
+	return r.GetOrganizerAdmin(ctx, organizerID, adminID)
 }
 
-func (r *Repository) ResetOrganizerAdminPassword(ctx context.Context, organizerID uuid.UUID, password string) error {
+func (r *Repository) ResetOrganizerAdminPassword(ctx context.Context, organizerID uuid.UUID, adminID uuid.UUID, password string) error {
 	passwordHash, err := hashPassword(password)
 	if err != nil {
 		return err
@@ -926,8 +926,8 @@ func (r *Repository) ResetOrganizerAdminPassword(ctx context.Context, organizerI
 	result, err := r.db.ExecContext(ctx, `
 UPDATE users
 SET password_hash = ?
-WHERE organizer_id = ? AND role = ?
-`, passwordHash, organizerID.String(), roles.OrganizerAdmin)
+WHERE organizer_id = ? AND id = ? AND role = ?
+`, passwordHash, organizerID.String(), adminID.String(), roles.OrganizerAdmin)
 	if err != nil {
 		return err
 	}
@@ -938,32 +938,34 @@ WHERE organizer_id = ? AND role = ?
 	}
 
 	if rowsAffected == 0 {
-		var exists bool
-		err = r.db.QueryRowContext(ctx, `
-SELECT EXISTS(
-    SELECT 1
-    FROM organizers
-    WHERE id = ?
-)
-`, organizerID.String()).Scan(&exists)
-		if err != nil {
-			return err
-		}
-		if !exists {
-			return ErrOrganizerNotFound
-		}
-
-		return ErrOrganizerAdminNotFound
+		return r.ensureOrganizerAdminExists(ctx, organizerID, adminID)
 	}
 
 	return nil
 }
 
-func (r *Repository) DeleteOrganizerAdmin(ctx context.Context, organizerID uuid.UUID) error {
+func (r *Repository) DeleteOrganizerAdmin(ctx context.Context, organizerID uuid.UUID, adminID uuid.UUID) error {
+	if err := r.ensureOrganizerAdminExists(ctx, organizerID, adminID); err != nil {
+		return err
+	}
+
+	var adminCount int
+	if err := r.db.QueryRowContext(ctx, `
+SELECT COUNT(*)
+FROM users
+WHERE organizer_id = ? AND role = ?
+`, organizerID.String(), roles.OrganizerAdmin).Scan(&adminCount); err != nil {
+		return err
+	}
+
+	if adminCount <= 1 {
+		return ErrLastOrganizerAdmin
+	}
+
 	result, err := r.db.ExecContext(ctx, `
 DELETE FROM users
-WHERE organizer_id = ? AND role = ?
-`, organizerID.String(), roles.OrganizerAdmin)
+WHERE organizer_id = ? AND id = ? AND role = ?
+`, organizerID.String(), adminID.String(), roles.OrganizerAdmin)
 	if err != nil {
 		return err
 	}
@@ -974,22 +976,7 @@ WHERE organizer_id = ? AND role = ?
 	}
 
 	if rowsAffected == 0 {
-		var exists bool
-		err = r.db.QueryRowContext(ctx, `
-SELECT EXISTS(
-    SELECT 1
-    FROM organizers
-    WHERE id = ?
-)
-`, organizerID.String()).Scan(&exists)
-		if err != nil {
-			return err
-		}
-		if !exists {
-			return ErrOrganizerNotFound
-		}
-
-		return ErrOrganizerAdminNotFound
+		return r.ensureOrganizerAdminExists(ctx, organizerID, adminID)
 	}
 
 	return nil
@@ -1070,4 +1057,81 @@ func isUniqueViolation(err error) bool {
 
 	message := strings.ToLower(err.Error())
 	return strings.Contains(message, "duplicate") || strings.Contains(message, "unique")
+}
+
+func (r *Repository) ensureOrganizerExists(ctx context.Context, organizerID uuid.UUID) error {
+	var exists bool
+	err := r.db.QueryRowContext(ctx, `
+SELECT EXISTS(
+    SELECT 1
+    FROM organizers
+    WHERE id = ?
+)
+`, organizerID.String()).Scan(&exists)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return ErrOrganizerNotFound
+	}
+
+	return nil
+}
+
+func (r *Repository) ensureOrganizerAdminExists(ctx context.Context, organizerID uuid.UUID, adminID uuid.UUID) error {
+	if err := r.ensureOrganizerExists(ctx, organizerID); err != nil {
+		return err
+	}
+
+	var exists bool
+	err := r.db.QueryRowContext(ctx, `
+SELECT EXISTS(
+    SELECT 1
+    FROM users
+    WHERE organizer_id = ? AND id = ? AND role = ?
+)
+`, organizerID.String(), adminID.String(), roles.OrganizerAdmin).Scan(&exists)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return ErrOrganizerAdminNotFound
+	}
+
+	return nil
+}
+
+type organizerAdminScanner interface {
+	Scan(dest ...any) error
+}
+
+func scanOrganizerAdmin(scanner organizerAdminScanner) (OrganizerAdmin, error) {
+	var item OrganizerAdmin
+	var adminID string
+	var organizerID string
+
+	err := scanner.Scan(
+		&adminID,
+		&item.Name,
+		&item.Email,
+		&item.Role,
+		&organizerID,
+		&item.CreatedAt,
+		&item.UpdatedAt,
+	)
+	if err != nil {
+		return OrganizerAdmin{}, err
+	}
+
+	item.ID, err = uuid.Parse(adminID)
+	if err != nil {
+		return OrganizerAdmin{}, err
+	}
+
+	item.OrganizerID, err = uuid.Parse(organizerID)
+	if err != nil {
+		return OrganizerAdmin{}, err
+	}
+
+	return item, nil
 }

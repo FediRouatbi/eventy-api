@@ -42,36 +42,68 @@ Frontend and mobile can use `/openapi.json` to generate typed API clients.
 ## User endpoint
 
 - `GET /v1/users/me`
+- `PATCH /v1/users/me`
 
 ## Category endpoints
 
 - `GET /v1/categories`
 - `POST /v1/categories`
+- `PATCH /v1/categories/{categoryID}`
+- `DELETE /v1/categories/{categoryID}`
+- `GET /v1/public/categories/{categorySlug}`
 
 ## Public event endpoints
 
 - `GET /v1/public/events`
 - `GET /v1/public/events/{eventID}`
+- `POST /v1/public/reservations`
+- `GET /v1/public/reservations/{reservationID}`
+- `DELETE /v1/public/reservations/{reservationID}`
+- `POST /v1/public/checkout-orders`
+- `GET /v1/public/checkout-orders/{orderID}`
+- `POST /v1/public/checkout-orders/{orderID}/stripe-session`
+- `GET /v1/public/stripe-sessions/{stripeSessionID}/checkout-order`
+
+## Stripe webhook
+
+- `POST /v1/stripe/webhook`
+
+Required env vars (see `.env.example`):
+
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+- `WEB_BASE_URL` (or override `STRIPE_CHECKOUT_SUCCESS_URL` / `STRIPE_CHECKOUT_CANCEL_URL`)
 
 ## Admin endpoints
 
+- `GET /v1/admins/overview`
 - `GET /v1/admins/organizers`
 - `POST /v1/admins/organizers`
 - `GET /v1/admins/organizers/{organizerID}`
-- `GET /v1/admins/organizers/{organizerID}/admin`
-- `PATCH /v1/admins/organizers/{organizerID}/admin/password`
+- `PATCH /v1/admins/organizers/{organizerID}`
+- `DELETE /v1/admins/organizers/{organizerID}`
+- `GET /v1/admins/organizers/{organizerID}/admins`
+- `POST /v1/admins/organizers/{organizerID}/admins`
+- `GET /v1/admins/organizers/{organizerID}/admins/{adminID}`
+- `PATCH /v1/admins/organizers/{organizerID}/admins/{adminID}`
+- `PATCH /v1/admins/organizers/{organizerID}/admins/{adminID}/password`
+- `DELETE /v1/admins/organizers/{organizerID}/admins/{adminID}`
 
 ## Event endpoints
 
 - `GET /v1/events`
 - `POST /v1/events`
 - `GET /v1/events/{eventID}`
+- `PATCH /v1/events/{eventID}`
+- `DELETE /v1/events/{eventID}`
 - `GET /v1/events/{eventID}/sessions`
 - `POST /v1/events/{eventID}/sessions`
 - `PATCH /v1/events/{eventID}/sessions/{sessionID}`
+- `DELETE /v1/events/{eventID}/sessions/{sessionID}`
 - `GET /v1/events/{eventID}/sessions/{sessionID}/ticket-types`
 - `POST /v1/events/{eventID}/sessions/{sessionID}/ticket-types`
 - `PATCH /v1/events/{eventID}/sessions/{sessionID}/ticket-types/{ticketTypeID}`
+- `DELETE /v1/events/{eventID}/sessions/{sessionID}/ticket-types/{ticketTypeID}`
 
 ## Request examples
 
@@ -185,6 +217,17 @@ The profile payload can now include:
 }
 ```
 
+### Update Me
+
+Send `Authorization: Bearer <token>` and:
+
+```json
+{
+  "name": "John Doe",
+  "email": "john@example.com"
+}
+```
+
 ### Create Category
 
 Super admin only.
@@ -221,24 +264,58 @@ That means the dashboard can use the existing event endpoints and they will only
 There is no shared default password for all admins.
 Each organizer admin gets the exact password you send in `admin_password` at creation time, and super admins can later reset it through the password-reset admin route.
 
-### Get Organizer Admin
+### List Organizer Admins
 
 Super admin only.
 
-This returns the single `organizer_admin` account attached to the organizer.
+This returns every `organizer_admin` account attached to the organizer.
+
+### Add Organizer Admin
+
+Super admin only.
+
+```json
+{
+  "admin_name": "Second Organizer Admin",
+  "admin_email": "second-admin@example.com",
+  "admin_password": "secret123"
+}
+```
 
 ### Get Organizer
 
 Super admin only.
 
 This is the best endpoint to call when someone clicks an organizer in the dashboard list.
-It returns the organizer row, its linked admin account, and organizer-scoped event summaries in one response.
+It returns the organizer row, its admin list, and organizer-scoped event summaries in one response.
 
 ### List Organizers
 
 Super admin only.
 
-This list now returns each organizer row together with its linked admin account plus `event_count` and `session_count`, so the admin dashboard can render the organizer table from a single request.
+This list now returns each organizer row together with a primary linked admin account plus `event_count` and `session_count`, so the admin dashboard can render the organizer table from a single request.
+
+### Update Organizer
+
+Super admin only.
+
+```json
+{
+  "organizer_name": "Eventy Lagos",
+  "organizer_slug": "eventy-lagos"
+}
+```
+
+### Update Organizer Admin
+
+Super admin only.
+
+```json
+{
+  "admin_name": "Updated Organizer Admin",
+  "admin_email": "updated-admin@example.com"
+}
+```
 
 ### Reset Organizer Admin Password
 
@@ -249,6 +326,12 @@ Super admin only.
   "password": "newSecret123"
 }
 ```
+
+### Delete Organizer Admin
+
+Super admin only.
+
+This now rejects deleting the last remaining organizer admin for an organizer.
 
 ### Create Event
 
@@ -344,19 +427,23 @@ Send `Authorization: Bearer <token>`.
 
 1. Install Go 1.22+
 2. Install MySQL and create the `eventy` database
-3. Apply [db/migrations/000001_create_users.up.sql](C:\Users\SKYMIL\Documents\Playground\eventy-api\db\migrations\000001_create_users.up.sql)
-4. Apply [db/migrations/000002_create_pending_registrations.up.sql](C:\Users\SKYMIL\Documents\Playground\eventy-api\db\migrations\000002_create_pending_registrations.up.sql)
-5. Apply [db/migrations/000003_create_password_reset_tokens.up.sql](C:\Users\SKYMIL\Documents\Playground\eventy-api\db\migrations\000003_create_password_reset_tokens.up.sql)
-6. Apply [db/migrations/000004_create_auth_sessions.up.sql](C:\Users\SKYMIL\Documents\Playground\eventy-api\db\migrations\000004_create_auth_sessions.up.sql)
-7. Apply [db/migrations/000005_create_organizers_and_user_ownership.up.sql](C:\Users\SKYMIL\Documents\Playground\eventy-api\db\migrations\000005_create_organizers_and_user_ownership.up.sql)
-8. Apply [db/migrations/000006_create_categories_events_sessions_ticket_types.up.sql](C:\Users\SKYMIL\Documents\Playground\eventy-api\db\migrations\000006_create_categories_events_sessions_ticket_types.up.sql)
-9. Apply [db/migrations/000007_add_event_coordinates.up.sql](C:\Users\SKYMIL\Documents\Playground\eventy-api\db\migrations\000007_add_event_coordinates.up.sql)
-10. Apply [db/migrations/000008_add_category_description.up.sql](C:\Users\SKYMIL\Documents\Playground\eventy-api\db\migrations\000008_add_category_description.up.sql)
-11. Copy `.env.example` to `.env`
-12. Configure MySQL and Mailjet values in `.env`
-13. Run `go mod tidy`
-14. Optional: run `sqlc generate`
-15. Run `go run ./cmd/api`
+3. Run migrations with the Go CLI:
+
+```bash
+go run ./cmd/migrate -source file://./db/migrations -database "$DATABASE_URL" up
+```
+
+To apply only the next 2 migrations:
+
+```bash
+go run ./cmd/migrate -source file://./db/migrations -database "$DATABASE_URL" up 2
+```
+
+4. Copy `.env.example` to `.env`
+5. Configure MySQL and Mailjet values in `.env`
+6. Run `go mod tidy`
+7. Optional: run `sqlc generate`
+8. Run `go run ./cmd/api`
 
 ## Notes
 

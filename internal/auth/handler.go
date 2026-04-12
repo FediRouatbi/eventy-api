@@ -221,6 +221,7 @@ func (h *Handler) writeAuthError(w http.ResponseWriter, r *http.Request, err err
 	case errors.Is(err, ErrEmailAlreadyExists):
 		responses.WriteError(w, http.StatusConflict, err.Error())
 	case errors.Is(err, ErrInvalidCredentials),
+		errors.Is(err, ErrAccountPendingVerification),
 		errors.Is(err, ErrInvalidRefreshToken),
 		errors.Is(err, ErrSessionExpired),
 		errors.Is(err, ErrSessionRevoked):

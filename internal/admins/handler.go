@@ -148,6 +148,68 @@ func (h *Handler) GetOrganizer(w http.ResponseWriter, r *http.Request) {
 	responses.WriteJSON(w, http.StatusOK, item)
 }
 
+func (h *Handler) ListOrganizerAdmins(w http.ResponseWriter, r *http.Request) {
+	organizerID, err := uuid.Parse(chi.URLParam(r, "organizerID"))
+	if err != nil {
+		responses.WriteError(w, http.StatusBadRequest, ErrInvalidOrganizerID.Error())
+		return
+	}
+
+	items, err := h.service.ListOrganizerAdmins(r.Context(), organizerID)
+	if err != nil {
+		logger.RequestError(r, "admins.list_organizer_admins", err)
+
+		switch {
+		case errors.Is(err, ErrOrganizerNotFound):
+			responses.WriteError(w, http.StatusNotFound, err.Error())
+		default:
+			responses.WriteError(w, http.StatusInternalServerError, "internal server error")
+		}
+		return
+	}
+
+	responses.WriteJSON(w, http.StatusOK, items)
+}
+
+func (h *Handler) AddOrganizerAdmin(w http.ResponseWriter, r *http.Request) {
+	organizerID, err := uuid.Parse(chi.URLParam(r, "organizerID"))
+	if err != nil {
+		responses.WriteError(w, http.StatusBadRequest, ErrInvalidOrganizerID.Error())
+		return
+	}
+
+	var input AddOrganizerAdminInput
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+
+	if err := decoder.Decode(&input); err != nil {
+		logger.RequestError(r, "admins.add_organizer_admin.decode", err)
+		responses.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	item, err := h.service.AddOrganizerAdmin(r.Context(), organizerID, input)
+	if err != nil {
+		logger.RequestError(r, "admins.add_organizer_admin", err)
+
+		switch {
+		case errors.Is(err, ErrInvalidAdminName),
+			errors.Is(err, ErrInvalidAdminEmail),
+			errors.Is(err, ErrInvalidAdminPassword):
+			responses.WriteError(w, http.StatusBadRequest, err.Error())
+		case errors.Is(err, ErrOrganizerNotFound):
+			responses.WriteError(w, http.StatusNotFound, err.Error())
+		case errors.Is(err, ErrAdminEmailExists):
+			responses.WriteError(w, http.StatusConflict, err.Error())
+		default:
+			responses.WriteError(w, http.StatusInternalServerError, "internal server error")
+		}
+		return
+	}
+
+	responses.WriteJSON(w, http.StatusCreated, item)
+}
+
 func (h *Handler) GetOrganizerAdmin(w http.ResponseWriter, r *http.Request) {
 	organizerID, err := uuid.Parse(chi.URLParam(r, "organizerID"))
 	if err != nil {
@@ -155,7 +217,13 @@ func (h *Handler) GetOrganizerAdmin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	item, err := h.service.GetOrganizerAdmin(r.Context(), organizerID)
+	adminID, err := uuid.Parse(chi.URLParam(r, "adminID"))
+	if err != nil {
+		responses.WriteError(w, http.StatusBadRequest, ErrInvalidAdminID.Error())
+		return
+	}
+
+	item, err := h.service.GetOrganizerAdmin(r.Context(), organizerID, adminID)
 	if err != nil {
 		logger.RequestError(r, "admins.get_organizer_admin", err)
 
@@ -178,6 +246,12 @@ func (h *Handler) UpdateOrganizerAdmin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	adminID, err := uuid.Parse(chi.URLParam(r, "adminID"))
+	if err != nil {
+		responses.WriteError(w, http.StatusBadRequest, ErrInvalidAdminID.Error())
+		return
+	}
+
 	var input UpdateOrganizerAdminInput
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
@@ -188,7 +262,7 @@ func (h *Handler) UpdateOrganizerAdmin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	item, err := h.service.UpdateOrganizerAdmin(r.Context(), organizerID, input)
+	item, err := h.service.UpdateOrganizerAdmin(r.Context(), organizerID, adminID, input)
 	if err != nil {
 		logger.RequestError(r, "admins.update_organizer_admin", err)
 
@@ -215,6 +289,12 @@ func (h *Handler) ResetOrganizerAdminPassword(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	adminID, err := uuid.Parse(chi.URLParam(r, "adminID"))
+	if err != nil {
+		responses.WriteError(w, http.StatusBadRequest, ErrInvalidAdminID.Error())
+		return
+	}
+
 	var input ResetOrganizerAdminPasswordInput
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
@@ -225,7 +305,7 @@ func (h *Handler) ResetOrganizerAdminPassword(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	err = h.service.ResetOrganizerAdminPassword(r.Context(), organizerID, input)
+	err = h.service.ResetOrganizerAdminPassword(r.Context(), organizerID, adminID, input)
 	if err != nil {
 		logger.RequestError(r, "admins.reset_organizer_admin_password", err)
 
@@ -250,11 +330,19 @@ func (h *Handler) DeleteOrganizerAdmin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.service.DeleteOrganizerAdmin(r.Context(), organizerID)
+	adminID, err := uuid.Parse(chi.URLParam(r, "adminID"))
+	if err != nil {
+		responses.WriteError(w, http.StatusBadRequest, ErrInvalidAdminID.Error())
+		return
+	}
+
+	err = h.service.DeleteOrganizerAdmin(r.Context(), organizerID, adminID)
 	if err != nil {
 		logger.RequestError(r, "admins.delete_organizer_admin", err)
 
 		switch {
+		case errors.Is(err, ErrLastOrganizerAdmin):
+			responses.WriteError(w, http.StatusConflict, err.Error())
 		case errors.Is(err, ErrOrganizerNotFound), errors.Is(err, ErrOrganizerAdminNotFound):
 			responses.WriteError(w, http.StatusNotFound, err.Error())
 		default:

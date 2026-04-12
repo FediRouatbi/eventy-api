@@ -38,6 +38,11 @@ WHERE id = ?
 LIMIT 1
 `
 
+const deleteUserByIDQuery = `
+DELETE FROM users
+WHERE id = ?
+`
+
 const updateUserPasswordByEmailQuery = `
 UPDATE users
 SET password_hash = ?
@@ -47,6 +52,13 @@ WHERE email = ?
 const updateUserPasswordByIDQuery = `
 UPDATE users
 SET password_hash = ?
+WHERE id = ?
+`
+
+const updateUserProfileQuery = `
+UPDATE users
+SET name = ?,
+    email = ?
 WHERE id = ?
 `
 
@@ -109,6 +121,11 @@ func (q *Queries) GetUserByID(ctx context.Context, id string) (User, error) {
 	return user, err
 }
 
+func (q *Queries) DeleteUserByID(ctx context.Context, id string) error {
+	_, err := q.db.ExecContext(ctx, deleteUserByIDQuery, id)
+	return err
+}
+
 func (q *Queries) CheckUserEmailExists(ctx context.Context, email string) (bool, error) {
 	row := q.db.QueryRowContext(ctx, checkUserEmailExistsQuery, email)
 
@@ -125,5 +142,16 @@ func (q *Queries) UpdateUserPasswordByEmail(ctx context.Context, passwordHash st
 
 func (q *Queries) UpdateUserPasswordByID(ctx context.Context, passwordHash string, id string) error {
 	_, err := q.db.ExecContext(ctx, updateUserPasswordByIDQuery, passwordHash, id)
+	return err
+}
+
+type UpdateUserProfileParams struct {
+	Name  string
+	Email string
+	ID    string
+}
+
+func (q *Queries) UpdateUserProfile(ctx context.Context, arg UpdateUserProfileParams) error {
+	_, err := q.db.ExecContext(ctx, updateUserProfileQuery, arg.Name, arg.Email, arg.ID)
 	return err
 }

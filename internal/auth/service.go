@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"eventy-api/internal/platform/jwt"
 	"strings"
 	"time"
@@ -113,6 +114,13 @@ func (s *Service) Login(ctx context.Context, input LoginInput) (AuthResult, erro
 
 	user, passwordHash, err := s.repository.GetUserByEmail(ctx, input.Email)
 	if err != nil {
+		if errors.Is(err, ErrInvalidCredentials) {
+			pending, pendingErr := s.repository.GetPendingRegistrationByEmail(ctx, input.Email)
+			if pendingErr == nil && comparePassword(pending.PasswordHash, input.Password) == nil {
+				return AuthResult{}, ErrAccountPendingVerification
+			}
+		}
+
 		return AuthResult{}, err
 	}
 

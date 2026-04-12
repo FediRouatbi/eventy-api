@@ -29,6 +29,8 @@ func New(adminsHandler *admins.Handler, authHandler *auth.Handler, categoriesHan
 	r.Get("/openapi.json", docs.OpenAPIJSONHandler())
 
 	r.Route("/v1", func(r chi.Router) {
+		r.Post("/stripe/webhook", eventsHandler.StripeWebhook)
+
 		r.Route("/auth", func(r chi.Router) {
 			r.Post("/register", authHandler.Register)
 			r.Post("/register/resend-otp", authHandler.ResendRegisterOTP)
@@ -52,6 +54,13 @@ func New(adminsHandler *admins.Handler, authHandler *auth.Handler, categoriesHan
 			r.Get("/categories/{categorySlug}", categoriesHandler.GetPublicBySlug)
 			r.Get("/events", eventsHandler.ListPublic)
 			r.Get("/events/{eventID}", eventsHandler.GetPublicByID)
+			r.Post("/reservations", eventsHandler.UpsertReservation)
+			r.Get("/reservations/{reservationID}", eventsHandler.GetReservation)
+			r.Delete("/reservations/{reservationID}", eventsHandler.DeleteReservation)
+			r.Post("/checkout-orders", eventsHandler.CreateCheckoutOrder)
+			r.Get("/checkout-orders/{orderID}", eventsHandler.GetCheckoutOrder)
+			r.Post("/checkout-orders/{orderID}/stripe-session", eventsHandler.CreateStripeCheckoutSession)
+			r.Get("/stripe-sessions/{stripeSessionID}/checkout-order", eventsHandler.GetCheckoutOrderByStripeSession)
 		})
 
 		r.Route("/admins", func(r chi.Router) {
@@ -61,10 +70,12 @@ func New(adminsHandler *admins.Handler, authHandler *auth.Handler, categoriesHan
 			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin)).Get("/organizers/{organizerID}", adminsHandler.GetOrganizer)
 			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin)).Patch("/organizers/{organizerID}", adminsHandler.UpdateOrganizer)
 			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin)).Delete("/organizers/{organizerID}", adminsHandler.DeleteOrganizer)
-			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin)).Get("/organizers/{organizerID}/admin", adminsHandler.GetOrganizerAdmin)
-			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin)).Patch("/organizers/{organizerID}/admin", adminsHandler.UpdateOrganizerAdmin)
-			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin)).Patch("/organizers/{organizerID}/admin/password", adminsHandler.ResetOrganizerAdminPassword)
-			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin)).Delete("/organizers/{organizerID}/admin", adminsHandler.DeleteOrganizerAdmin)
+			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin)).Get("/organizers/{organizerID}/admins", adminsHandler.ListOrganizerAdmins)
+			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin)).Post("/organizers/{organizerID}/admins", adminsHandler.AddOrganizerAdmin)
+			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin)).Get("/organizers/{organizerID}/admins/{adminID}", adminsHandler.GetOrganizerAdmin)
+			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin)).Patch("/organizers/{organizerID}/admins/{adminID}", adminsHandler.UpdateOrganizerAdmin)
+			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin)).Patch("/organizers/{organizerID}/admins/{adminID}/password", adminsHandler.ResetOrganizerAdminPassword)
+			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin)).Delete("/organizers/{organizerID}/admins/{adminID}", adminsHandler.DeleteOrganizerAdmin)
 		})
 
 		r.Route("/events", func(r chi.Router) {
@@ -84,6 +95,8 @@ func New(adminsHandler *admins.Handler, authHandler *auth.Handler, categoriesHan
 		})
 
 		r.With(authMiddleware.RequireAuth).Get("/users/me", usersHandler.GetMe)
+		r.With(authMiddleware.RequireAuth).Patch("/users/me", usersHandler.UpdateMe)
+		r.With(authMiddleware.RequireAuth).Delete("/users/me", usersHandler.DeleteMe)
 	})
 
 	return r

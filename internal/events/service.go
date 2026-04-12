@@ -3,6 +3,7 @@ package events
 import (
 	"context"
 	"strings"
+	"time"
 
 	"eventy-api/internal/platform/jwt"
 	"eventy-api/internal/platform/roles"
@@ -12,10 +13,18 @@ import (
 
 type Service struct {
 	repository *Repository
+	stripeCfg  StripeConfig
 }
 
-func NewService(repository *Repository) *Service {
-	return &Service{repository: repository}
+type StripeConfig struct {
+	SecretKey     string
+	WebhookSecret string
+	SuccessURL    string
+	CancelURL     string
+}
+
+func NewService(repository *Repository, stripeCfg StripeConfig) *Service {
+	return &Service{repository: repository, stripeCfg: stripeCfg}
 }
 
 func (s *Service) Create(ctx context.Context, claims *jwt.Claims, input CreateEventInput) (Event, error) {
@@ -115,6 +124,102 @@ func (s *Service) ListPublic(ctx context.Context) ([]PublicEvent, error) {
 
 func (s *Service) GetPublicByID(ctx context.Context, eventID uuid.UUID) (PublicEventDetail, error) {
 	return s.repository.GetPublicDetailByID(ctx, eventID)
+}
+
+func (s *Service) UpsertReservation(ctx context.Context, input UpsertTicketReservationInput) (TicketReservation, error) {
+	input.ReservationID = strings.TrimSpace(input.ReservationID)
+	input.ReservationToken = strings.TrimSpace(input.ReservationToken)
+
+	for index := range input.Items {
+		input.Items[index].TicketTypeID = strings.TrimSpace(input.Items[index].TicketTypeID)
+	}
+
+	return s.repository.UpsertReservation(ctx, input)
+}
+
+func (s *Service) GetReservation(ctx context.Context, reservationID uuid.UUID, reservationToken string) (TicketReservation, error) {
+	reservationToken = strings.TrimSpace(reservationToken)
+	if reservationToken == "" {
+		return TicketReservation{}, ErrInvalidReservationToken
+	}
+
+	return s.repository.GetReservation(ctx, reservationID, reservationToken)
+}
+
+func (s *Service) DeleteReservation(ctx context.Context, reservationID uuid.UUID, reservationToken string) error {
+	reservationToken = strings.TrimSpace(reservationToken)
+	if reservationToken == "" {
+		return ErrInvalidReservationToken
+	}
+
+	return s.repository.DeleteReservation(ctx, reservationID, reservationToken)
+}
+
+func (s *Service) CreateCheckoutOrder(ctx context.Context, input CreateCheckoutOrderInput) (CheckoutOrder, error) {
+	input.ReservationID = strings.TrimSpace(input.ReservationID)
+	input.ReservationToken = strings.TrimSpace(input.ReservationToken)
+	input.CustomerName = strings.TrimSpace(input.CustomerName)
+	input.CustomerEmail = strings.TrimSpace(strings.ToLower(input.CustomerEmail))
+
+	if err := validateCreateCheckoutOrderInput(input); err != nil {
+		return CheckoutOrder{}, err
+	}
+
+	return s.repository.CreateCheckoutOrder(ctx, input)
+}
+
+func (s *Service) GetCheckoutOrder(ctx context.Context, orderID uuid.UUID, orderToken string) (CheckoutOrder, error) {
+	orderToken = strings.TrimSpace(orderToken)
+	if orderToken == "" {
+		return CheckoutOrder{}, ErrInvalidOrderToken
+	}
+
+	return s.repository.GetCheckoutOrder(ctx, orderID, orderToken)
+}
+
+func (s *Service) CreateStripeCheckoutSession(ctx context.Context, orderID uuid.UUID, orderToken string) (StripeCheckoutSessionResponse, error) {
+	if strings.TrimSpace(s.stripeCfg.SecretKey) == "" || strings.TrimSpace(s.stripeCfg.SuccessURL) == "" || strings.TrimSpace(s.stripeCfg.CancelURL) == "" {
+		return StripeCheckoutSessionResponse{}, ErrStripeNotConfigured
+	}
+
+	order, err := s.repository.GetCheckoutOrder(ctx, orderID, orderToken)
+	if err != nil {
+		return StripeCheckoutSessionResponse{}, err
+	}
+
+	if order.Status != "pending_payment" {
+		return StripeCheckoutSessionResponse{}, ErrCheckoutOrderNotPayable
+	}
+
+	session, err := s.repository.CreateStripeCheckoutSession(ctx, s.stripeCfg.SecretKey, s.stripeCfg.SuccessURL, s.stripeCfg.CancelURL, order)
+	if err != nil {
+		return StripeCheckoutSessionResponse{}, err
+	}
+
+	return StripeCheckoutSessionResponse{
+		SessionID:   session.ID,
+		CheckoutURL: session.URL,
+		OrderID:     order.ID.String(),
+		OrderNumber: order.OrderNumber,
+		ExpiresAt:   order.ExpiresAt.Format(time.RFC3339),
+	}, nil
+}
+
+func (s *Service) GetCheckoutOrderByStripeSessionID(ctx context.Context, stripeSessionID string) (CheckoutOrderSummary, error) {
+	stripeSessionID = strings.TrimSpace(stripeSessionID)
+	if stripeSessionID == "" {
+		return CheckoutOrderSummary{}, ErrInvalidStripeSessionID
+	}
+
+	return s.repository.GetCheckoutOrderByStripeSessionID(ctx, stripeSessionID)
+}
+
+func (s *Service) HandleStripeWebhook(ctx context.Context, payload []byte, signature string) error {
+	if strings.TrimSpace(s.stripeCfg.WebhookSecret) == "" {
+		return ErrStripeNotConfigured
+	}
+
+	return s.repository.HandleStripeWebhook(ctx, s.stripeCfg.SecretKey, s.stripeCfg.WebhookSecret, payload, signature)
 }
 
 func (s *Service) GetByID(ctx context.Context, claims *jwt.Claims, eventID uuid.UUID) (Event, error) {

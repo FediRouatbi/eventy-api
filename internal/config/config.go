@@ -11,6 +11,7 @@ import (
 type Config struct {
 	AppEnv           string
 	HTTPPort         string
+	WebBaseURL       string
 	DatabaseURL      string
 	JWTSecret        string
 	JWTIssuer        string
@@ -21,6 +22,10 @@ type Config struct {
 	MailjetSecretKey string
 	MailjetFromEmail string
 	MailjetFromName  string
+	StripeSecretKey  string
+	StripeWebhookKey string
+	StripeSuccessURL string
+	StripeCancelURL  string
 }
 
 func Load() (Config, error) {
@@ -42,6 +47,7 @@ func Load() (Config, error) {
 	cfg := Config{
 		AppEnv:           getEnv("APP_ENV", "development"),
 		HTTPPort:         getEnv("HTTP_PORT", "8080"),
+		WebBaseURL:       getEnv("WEB_BASE_URL", "http://localhost:3000"),
 		DatabaseURL:      strings.TrimSpace(os.Getenv("DATABASE_URL")),
 		JWTSecret:        strings.TrimSpace(os.Getenv("JWT_SECRET")),
 		JWTIssuer:        getEnv("JWT_ISSUER", "eventy-api"),
@@ -52,7 +58,12 @@ func Load() (Config, error) {
 		MailjetSecretKey: strings.TrimSpace(os.Getenv("MAILJET_SECRET_KEY")),
 		MailjetFromEmail: strings.TrimSpace(os.Getenv("MAILJET_FROM_EMAIL")),
 		MailjetFromName:  getEnv("MAILJET_FROM_NAME", "Eventy"),
+		StripeSecretKey:  strings.TrimSpace(os.Getenv("STRIPE_SECRET_KEY")),
+		StripeWebhookKey: strings.TrimSpace(os.Getenv("STRIPE_WEBHOOK_SECRET")),
 	}
+
+	cfg.StripeSuccessURL = getEnv("STRIPE_CHECKOUT_SUCCESS_URL", cfg.WebBaseURL+"/checkout/complete?session_id={CHECKOUT_SESSION_ID}")
+	cfg.StripeCancelURL = getEnv("STRIPE_CHECKOUT_CANCEL_URL", cfg.WebBaseURL+"/checkout?cancelled=1")
 
 	if cfg.DatabaseURL == "" {
 		return Config{}, errors.New("DATABASE_URL is required")

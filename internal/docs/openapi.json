@@ -29,11 +29,44 @@
     }
   ],
   "paths": {
+    "/v1/admins/overview": {
+      "get": {
+        "tags": ["Admins"],
+        "summary": "Get admin overview",
+        "description": "Organizer admins and super admins can fetch overview metrics, recent events, upcoming sessions, and attention items scoped to their access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Admin overview",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOverview"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
     "/v1/admins/organizers": {
       "get": {
         "tags": ["Admins"],
         "summary": "List organizers",
-        "description": "Super admins can list organizers with the linked admin account plus event and session totals for each organizer.",
+        "description": "Super admins can list organizers with the primary linked admin account plus event and session totals for each organizer.",
         "security": [
           {
             "bearerAuth": []
@@ -116,7 +149,7 @@
       "get": {
         "tags": ["Admins"],
         "summary": "Get organizer",
-        "description": "Super admins can fetch a single organizer with its linked admin account and organizer-scoped event summaries in one response.",
+        "description": "Super admins can fetch a single organizer with its admin list and organizer-scoped event summaries in one response.",
         "security": [
           {
             "bearerAuth": []
@@ -160,13 +193,11 @@
             "$ref": "#/components/responses/ErrorResponse"
           }
         }
-      }
-    },
-    "/v1/admins/organizers/{organizerID}/admin": {
-      "get": {
+      },
+      "patch": {
         "tags": ["Admins"],
-        "summary": "Get organizer admin",
-        "description": "Super admins can fetch the single organizer admin account attached to a specific organizer.",
+        "summary": "Update organizer",
+        "description": "Super admins can update an organizer's name and slug.",
         "security": [
           {
             "bearerAuth": []
@@ -175,6 +206,240 @@
         "parameters": [
           {
             "name": "organizerID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOrganizerInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Organizer updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Organizer"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Admins"],
+        "summary": "Delete organizer",
+        "description": "Super admins can delete an organizer.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organizerID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Organizer deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/admins/organizers/{organizerID}/admins": {
+      "get": {
+        "tags": ["Admins"],
+        "summary": "List organizer admins",
+        "description": "Super admins can list every organizer admin attached to a specific organizer.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organizerID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Organizer admin list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrganizerAdmin"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Admins"],
+        "summary": "Add organizer admin",
+        "description": "Super admins can add another organizer admin to an existing organizer.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organizerID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddOrganizerAdminInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Organizer admin created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizerAdmin"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/admins/organizers/{organizerID}/admins/{adminID}": {
+      "get": {
+        "tags": ["Admins"],
+        "summary": "Get organizer admin",
+        "description": "Super admins can fetch a single organizer admin attached to a specific organizer.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organizerID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "adminID",
             "in": "path",
             "required": true,
             "schema": {
@@ -210,13 +475,11 @@
             "$ref": "#/components/responses/ErrorResponse"
           }
         }
-      }
-    },
-    "/v1/admins/organizers/{organizerID}/admin/password": {
+      },
       "patch": {
         "tags": ["Admins"],
-        "summary": "Reset organizer admin password",
-        "description": "Super admins can set a new password for the organizer admin account attached to an organizer.",
+        "summary": "Update organizer admin",
+        "description": "Super admins can update an organizer admin's name and email.",
         "security": [
           {
             "bearerAuth": []
@@ -225,6 +488,147 @@
         "parameters": [
           {
             "name": "organizerID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "adminID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOrganizerAdminInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Organizer admin updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizerAdmin"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Admins"],
+        "summary": "Delete organizer admin",
+        "description": "Super admins can delete an organizer admin as long as the organizer will still have at least one admin account remaining.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organizerID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "adminID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Organizer admin deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/admins/organizers/{organizerID}/admins/{adminID}/password": {
+      "patch": {
+        "tags": ["Admins"],
+        "summary": "Reset organizer admin password",
+        "description": "Super admins can set a new password for a specific organizer admin account.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organizerID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "adminID",
             "in": "path",
             "required": true,
             "schema": {
@@ -331,6 +735,150 @@
             "$ref": "#/components/responses/ErrorResponse"
           },
           "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Categories"],
+        "summary": "Update category",
+        "description": "Super admins can update a category by ID.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "categoryID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCategoryInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Category updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Category"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Categories"],
+        "summary": "Delete category",
+        "description": "Super admins can delete a category by ID.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "categoryID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Category deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/public/categories/{categorySlug}": {
+      "get": {
+        "tags": ["Categories"],
+        "summary": "Get public category by slug",
+        "description": "Returns a category by slug for public discovery pages.",
+        "parameters": [
+          {
+            "name": "categorySlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Category details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Category"
+                }
+              }
+            }
+          },
+          "404": {
             "$ref": "#/components/responses/ErrorResponse"
           },
           "500": {
@@ -534,6 +1082,115 @@
             "$ref": "#/components/responses/ErrorResponse"
           }
         }
+      },
+      "patch": {
+        "tags": ["Events"],
+        "summary": "Update event",
+        "description": "Organizer admins can only update events belonging to their organizer. Super admins can update any event.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "eventID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEventInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Event updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Event"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Events"],
+        "summary": "Delete event",
+        "description": "Organizer admins can only delete events belonging to their organizer. Super admins can delete any event.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "eventID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Event deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
       }
     },
     "/v1/events/{eventID}/sessions": {
@@ -691,6 +1348,62 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/EventSession"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Events"],
+        "summary": "Delete event session",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "eventID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sessionID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
                 }
               }
             }
@@ -895,6 +1608,71 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TicketType"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Events"],
+        "summary": "Delete ticket type",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "eventID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sessionID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "ticketTypeID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ticket type deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
                 }
               }
             }
@@ -1286,6 +2064,85 @@
             "$ref": "#/components/responses/ErrorResponse"
           }
         }
+      },
+      "patch": {
+        "tags": ["Users"],
+        "summary": "Update current user profile",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Users"],
+        "summary": "Delete current user account",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteAccountInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Account deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
       }
     }
   },
@@ -1346,6 +2203,54 @@
           }
         }
       },
+      "AddOrganizerAdminInput": {
+        "type": "object",
+        "required": ["admin_name", "admin_email", "admin_password"],
+        "properties": {
+          "admin_name": {
+            "type": "string",
+            "example": "Lagos Organizer Admin"
+          },
+          "admin_email": {
+            "type": "string",
+            "format": "email",
+            "example": "organizer@example.com"
+          },
+          "admin_password": {
+            "type": "string",
+            "example": "secret123"
+          }
+        }
+      },
+      "UpdateOrganizerInput": {
+        "type": "object",
+        "required": ["organizer_name", "organizer_slug"],
+        "properties": {
+          "organizer_name": {
+            "type": "string",
+            "example": "Eventy Lagos"
+          },
+          "organizer_slug": {
+            "type": "string",
+            "example": "eventy-lagos"
+          }
+        }
+      },
+      "UpdateOrganizerAdminInput": {
+        "type": "object",
+        "required": ["admin_name", "admin_email"],
+        "properties": {
+          "admin_name": {
+            "type": "string",
+            "example": "Lagos Organizer Admin"
+          },
+          "admin_email": {
+            "type": "string",
+            "format": "email",
+            "example": "organizer@example.com"
+          }
+        }
+      },
       "ResetOrganizerAdminPasswordInput": {
         "type": "object",
         "required": ["password"],
@@ -1358,6 +2263,28 @@
         }
       },
       "CreateCategoryInput": {
+        "type": "object",
+        "required": ["name", "slug"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Cinema"
+          },
+          "slug": {
+            "type": "string",
+            "example": "cinema"
+          },
+          "description": {
+            "type": "string",
+            "example": "Curated screenings, premieres, and cultural film nights."
+          },
+          "image_url": {
+            "type": "string",
+            "example": "https://example.com/cinema.jpg"
+          }
+        }
+      },
+      "UpdateCategoryInput": {
         "type": "object",
         "required": ["name", "slug"],
         "properties": {
@@ -1434,6 +2361,76 @@
             "banner_url": {
               "type": "string",
               "example": "https://example.com/banner.jpg"
+          },
+          "poster_url": {
+            "type": "string",
+            "example": "https://example.com/poster.jpg"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["draft", "published", "cancelled"],
+            "example": "draft"
+          },
+          "currency": {
+            "type": "string",
+            "example": "NGN"
+          },
+          "is_featured": {
+            "type": "boolean",
+            "example": false
+          }
+        }
+      },
+      "UpdateEventInput": {
+        "type": "object",
+        "required": ["category_id", "title", "slug", "description", "venue_name", "venue_address", "city", "country", "status", "currency"],
+        "properties": {
+          "category_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string",
+            "example": "Lagos Tech Expo 2026"
+          },
+          "slug": {
+            "type": "string",
+            "example": "lagos-tech-expo-2026"
+          },
+          "description": {
+            "type": "string"
+          },
+          "venue_name": {
+            "type": "string",
+            "example": "Landmark Centre"
+          },
+          "venue_address": {
+            "type": "string",
+            "example": "Water Corporation Drive, Victoria Island"
+          },
+          "city": {
+            "type": "string",
+            "example": "Lagos"
+          },
+          "country": {
+            "type": "string",
+            "example": "Nigeria"
+          },
+          "latitude": {
+            "type": "number",
+            "format": "double",
+            "example": 6.4281,
+            "nullable": true
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double",
+            "example": 3.4219,
+            "nullable": true
+          },
+          "banner_url": {
+            "type": "string",
+            "example": "https://example.com/banner.jpg"
           },
           "poster_url": {
             "type": "string",
@@ -1618,6 +2615,31 @@
             "type": "string",
             "minLength": 8,
             "example": "newSecret123"
+          }
+        }
+      },
+      "UpdateProfileInput": {
+        "type": "object",
+        "required": ["name", "email"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "John Doe"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "john@example.com"
+          }
+        }
+      },
+      "DeleteAccountInput": {
+        "type": "object",
+        "required": ["current_password"],
+        "properties": {
+          "current_password": {
+            "type": "string",
+            "example": "secret123"
           }
         }
       },
@@ -1812,10 +2834,16 @@
       },
       "OrganizerDetail": {
         "type": "object",
-        "required": ["organizer", "events"],
+        "required": ["organizer", "admins", "events"],
         "properties": {
           "organizer": {
             "$ref": "#/components/schemas/OrganizerListItem"
+          },
+          "admins": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrganizerAdmin"
+            }
           },
           "events": {
             "type": "array",
@@ -1873,6 +2901,140 @@
             "type": "string",
             "format": "date-time"
           }
+        }
+      },
+      "AdminOverview": {
+        "type": "object",
+        "required": ["scope", "stats", "needs_attention", "recent_events", "upcoming_sessions", "organizers"],
+        "properties": {
+          "scope": {
+            "type": "string",
+            "example": "super_admin"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/AdminOverviewStats"
+          },
+          "needs_attention": {
+            "$ref": "#/components/schemas/AdminOverviewNeedsAttention"
+          },
+          "recent_events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminOverviewEvent"
+            }
+          },
+          "upcoming_sessions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminOverviewSession"
+            }
+          },
+          "organizers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminOverviewOrganizerSummary"
+            }
+          }
+        }
+      },
+      "AdminOverviewStats": {
+        "type": "object",
+        "required": ["events", "published_events", "draft_events", "sessions", "scheduled_sessions", "ticket_types", "categories", "organizers"],
+        "properties": {
+          "events": { "type": "integer", "example": 12 },
+          "published_events": { "type": "integer", "example": 8 },
+          "draft_events": { "type": "integer", "example": 4 },
+          "sessions": { "type": "integer", "example": 18 },
+          "scheduled_sessions": { "type": "integer", "example": 16 },
+          "ticket_types": { "type": "integer", "example": 24 },
+          "categories": { "type": "integer", "example": 6 },
+          "organizers": { "type": "integer", "example": 3 }
+        }
+      },
+      "AdminOverviewNeedsAttention": {
+        "type": "object",
+        "required": ["draft_events_count", "events_without_sessions_count", "sessions_without_ticket_types_count", "events_without_sessions", "sessions_without_ticket_types"],
+        "properties": {
+          "draft_events_count": { "type": "integer", "example": 4 },
+          "events_without_sessions_count": { "type": "integer", "example": 2 },
+          "sessions_without_ticket_types_count": { "type": "integer", "example": 3 },
+          "events_without_sessions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminOverviewAttentionEvent"
+            }
+          },
+          "sessions_without_ticket_types": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminOverviewAttentionSession"
+            }
+          }
+        }
+      },
+      "AdminOverviewEvent": {
+        "type": "object",
+        "required": ["id", "organizer_id", "category_id", "title", "slug", "status", "venue_name", "city", "country", "organizer_name", "category_name", "created_at", "updated_at"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "organizer_id": { "type": "string", "format": "uuid" },
+          "category_id": { "type": "string", "format": "uuid" },
+          "title": { "type": "string" },
+          "slug": { "type": "string" },
+          "status": { "type": "string" },
+          "venue_name": { "type": "string" },
+          "city": { "type": "string" },
+          "country": { "type": "string" },
+          "organizer_name": { "type": "string" },
+          "category_name": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "AdminOverviewSession": {
+        "type": "object",
+        "required": ["id", "event_id", "event_title", "event_slug", "event_currency", "status", "starts_at", "ticket_type_count"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "event_id": { "type": "string", "format": "uuid" },
+          "event_title": { "type": "string" },
+          "event_slug": { "type": "string" },
+          "event_currency": { "type": "string" },
+          "status": { "type": "string" },
+          "starts_at": { "type": "string", "format": "date-time" },
+          "ticket_type_count": { "type": "integer", "example": 4 }
+        }
+      },
+      "AdminOverviewAttentionEvent": {
+        "type": "object",
+        "required": ["id", "title", "slug", "created_at"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "title": { "type": "string" },
+          "slug": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "AdminOverviewAttentionSession": {
+        "type": "object",
+        "required": ["id", "event_id", "event_title", "starts_at", "status"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "event_id": { "type": "string", "format": "uuid" },
+          "event_title": { "type": "string" },
+          "starts_at": { "type": "string", "format": "date-time" },
+          "status": { "type": "string" }
+        }
+      },
+      "AdminOverviewOrganizerSummary": {
+        "type": "object",
+        "required": ["id", "name", "slug", "event_count", "session_count"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "slug": { "type": "string" },
+          "event_count": { "type": "integer", "example": 3 },
+          "session_count": { "type": "integer", "example": 7 }
         }
       },
       "OrganizerAdmin": {

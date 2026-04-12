@@ -75,6 +75,36 @@ type UpdateTicketTypeInput struct {
 	MaxPerOrder int32   `json:"max_per_order"`
 }
 
+type UpsertTicketReservationInput struct {
+	ReservationID    string                             `json:"reservation_id,omitempty"`
+	ReservationToken string                             `json:"reservation_token,omitempty"`
+	Items            []UpsertTicketReservationItemInput `json:"items"`
+}
+
+type UpsertTicketReservationItemInput struct {
+	TicketTypeID string `json:"ticket_type_id"`
+	Quantity     int32  `json:"quantity"`
+}
+
+type CreateCheckoutOrderInput struct {
+	ReservationID    string `json:"reservation_id"`
+	ReservationToken string `json:"reservation_token"`
+	CustomerName     string `json:"customer_name"`
+	CustomerEmail    string `json:"customer_email"`
+}
+
+type CreateStripeCheckoutSessionInput struct {
+	OrderToken string `json:"order_token"`
+}
+
+type StripeCheckoutSessionResponse struct {
+	SessionID    string `json:"session_id"`
+	CheckoutURL  string `json:"checkout_url"`
+	OrderID      string `json:"order_id"`
+	OrderNumber  string `json:"order_number"`
+	ExpiresAt    string `json:"expires_at"`
+}
+
 type Event struct {
 	ID           uuid.UUID `json:"id"`
 	OrganizerID  uuid.UUID `json:"organizer_id"`
@@ -182,4 +212,75 @@ type PublicEvent struct {
 
 type PublicEventDetail struct {
 	PublicEvent
+}
+
+type TicketReservation struct {
+	ID        uuid.UUID               `json:"id"`
+	Token     string                  `json:"token"`
+	ExpiresAt time.Time               `json:"expires_at"`
+	CreatedAt time.Time               `json:"created_at"`
+	UpdatedAt time.Time               `json:"updated_at"`
+	Items     []TicketReservationItem `json:"items"`
+}
+
+type TicketReservationItem struct {
+	TicketTypeID      uuid.UUID `json:"ticket_type_id"`
+	TicketTypeName    string    `json:"ticket_type_name"`
+	Quantity          int32     `json:"quantity"`
+	UnitPrice         float64   `json:"unit_price"`
+	Currency          string    `json:"currency"`
+	MaxPerOrder       int32     `json:"max_per_order"`
+	AvailableQuantity int32     `json:"available_quantity"`
+	EventID           uuid.UUID `json:"event_id"`
+	EventTitle        string    `json:"event_title"`
+	SessionID         uuid.UUID `json:"session_id"`
+	SessionStartsAt   time.Time `json:"session_starts_at"`
+	SessionEndsAt     time.Time `json:"session_ends_at"`
+}
+
+type CheckoutOrder struct {
+	ID            uuid.UUID           `json:"id"`
+	Token         string              `json:"token"`
+	ReservationID uuid.UUID           `json:"reservation_id"`
+	OrderNumber   string              `json:"order_number"`
+	Status        string              `json:"status"`
+	CustomerName  string              `json:"customer_name"`
+	CustomerEmail string              `json:"customer_email"`
+	Currency      string              `json:"currency"`
+	Subtotal      float64             `json:"subtotal"`
+	ExpiresAt     time.Time           `json:"expires_at"`
+	CreatedAt     time.Time           `json:"created_at"`
+	UpdatedAt     time.Time           `json:"updated_at"`
+	StripeSessionID string            `json:"stripe_checkout_session_id,omitempty"`
+	PaidAt         *time.Time         `json:"paid_at,omitempty"`
+	Items         []CheckoutOrderItem `json:"items"`
+}
+
+type CheckoutOrderItem struct {
+	TicketTypeID    uuid.UUID `json:"ticket_type_id"`
+	TicketTypeName  string    `json:"ticket_type_name"`
+	Quantity        int32     `json:"quantity"`
+	UnitPrice       float64   `json:"unit_price"`
+	Currency        string    `json:"currency"`
+	EventID         uuid.UUID `json:"event_id"`
+	EventTitle      string    `json:"event_title"`
+	SessionID       uuid.UUID `json:"session_id"`
+	SessionStartsAt time.Time `json:"session_starts_at"`
+	SessionEndsAt   time.Time `json:"session_ends_at"`
+}
+
+type CheckoutOrderSummary struct {
+	ID            uuid.UUID           `json:"id"`
+	OrderNumber   string              `json:"order_number"`
+	Status        string              `json:"status"`
+	CustomerName  string              `json:"customer_name"`
+	CustomerEmail string              `json:"customer_email"`
+	Currency      string              `json:"currency"`
+	Subtotal      float64             `json:"subtotal"`
+	ExpiresAt     time.Time           `json:"expires_at"`
+	CreatedAt     time.Time           `json:"created_at"`
+	UpdatedAt     time.Time           `json:"updated_at"`
+	StripeSessionID string            `json:"stripe_checkout_session_id,omitempty"`
+	PaidAt         *time.Time         `json:"paid_at,omitempty"`
+	Items         []CheckoutOrderItem `json:"items"`
 }
