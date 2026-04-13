@@ -14,6 +14,7 @@ import (
 	"eventy-api/internal/platform/db/sqlc"
 	"eventy-api/internal/platform/email"
 	"eventy-api/internal/platform/jwt"
+	"eventy-api/internal/tickets"
 	"eventy-api/internal/users"
 	"log"
 	"net/http"
@@ -60,13 +61,16 @@ func New(cfg config.Config) (*App, error) {
 	usersRepository := users.NewRepository(queries)
 	usersService := users.NewService(usersRepository)
 	usersHandler := users.NewHandler(usersService)
+	ticketsRepository := tickets.NewRepository(postgresDB)
+	ticketsService := tickets.NewService(ticketsRepository)
+	ticketsHandler := tickets.NewHandler(ticketsService)
 	authMiddleware := httpmiddleware.NewAuthMiddleware(tokenManager)
 
 	ctx, stop := context.WithCancel(context.Background())
 	startMaintenance(ctx, eventsRepository)
 
 	return &App{
-		Router: router.New(adminsHandler, authHandler, categoriesHandler, eventsHandler, usersHandler, authMiddleware),
+		Router: router.New(adminsHandler, authHandler, categoriesHandler, eventsHandler, ticketsHandler, usersHandler, authMiddleware),
 		db:     postgresDB,
 		stop:   stop,
 	}, nil

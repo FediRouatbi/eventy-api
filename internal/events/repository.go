@@ -2229,6 +2229,25 @@ func (r *Repository) GetCheckoutOrderByStripeSessionID(ctx context.Context, stri
 	return order, nil
 }
 
+func (r *Repository) GetCheckoutOrderSummaryByID(ctx context.Context, orderID uuid.UUID) (CheckoutOrderSummary, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return CheckoutOrderSummary{}, err
+	}
+	defer tx.Rollback()
+
+	order, err := r.getCheckoutOrderSummaryByIDTx(ctx, tx, orderID.String())
+	if err != nil {
+		return CheckoutOrderSummary{}, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return CheckoutOrderSummary{}, err
+	}
+
+	return order, nil
+}
+
 func (r *Repository) ListCheckoutOrdersByCustomerEmail(ctx context.Context, customerEmail string, limit int) ([]CheckoutOrderSummary, error) {
 	customerEmail = strings.TrimSpace(strings.ToLower(customerEmail))
 	if customerEmail == "" {
@@ -2654,15 +2673,17 @@ func (r *Repository) markCheckoutOrderPaidByStripeSession(ctx context.Context, s
 		orderIDText       string
 		reservationIDText string
 		status            string
+		customerName      string
+		customerEmail     string
 	)
 
 	if err := tx.QueryRowContext(ctx, `
-SELECT id, reservation_id, status
+SELECT id, reservation_id, status, customer_name, customer_email
 FROM checkout_orders
 WHERE stripe_checkout_session_id = ?
 LIMIT 1
 FOR UPDATE
-`, stripeSessionID).Scan(&orderIDText, &reservationIDText, &status); err != nil {
+`, stripeSessionID).Scan(&orderIDText, &reservationIDText, &status, &customerName, &customerEmail); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil
 		}
@@ -2678,7 +2699,7 @@ FOR UPDATE
 	}
 
 	rows, err := tx.QueryContext(ctx, `
-SELECT ticket_type_id, quantity
+SELECT id, ticket_type_id, ticket_type_name, quantity, event_id, event_title, session_id, session_starts_at, session_ends_at
 FROM checkout_order_items
 WHERE order_id = ?
 `, orderIDText)
@@ -2688,14 +2709,31 @@ WHERE order_id = ?
 	defer rows.Close()
 
 	type orderItem struct {
-		ticketTypeID string
-		quantity     int32
+		id              string
+		ticketTypeID    string
+		ticketTypeName  string
+		quantity        int32
+		eventID         string
+		eventTitle      string
+		sessionID       string
+		sessionStartsAt time.Time
+		sessionEndsAt   time.Time
 	}
 
 	items := make([]orderItem, 0)
 	for rows.Next() {
 		var item orderItem
-		if err := rows.Scan(&item.ticketTypeID, &item.quantity); err != nil {
+		if err := rows.Scan(
+			&item.id,
+			&item.ticketTypeID,
+			&item.ticketTypeName,
+			&item.quantity,
+			&item.eventID,
+			&item.eventTitle,
+			&item.sessionID,
+			&item.sessionStartsAt,
+			&item.sessionEndsAt,
+		); err != nil {
 			return err
 		}
 		items = append(items, item)
@@ -2742,6 +2780,51 @@ DELETE FROM ticket_reservation_items
 WHERE reservation_id = ?
 `, reservationIDText); err != nil {
 		return err
+	}
+
+	normalizedEmail := strings.ToLower(strings.TrimSpace(customerEmail))
+	if normalizedEmail == "" {
+		return errors.New("missing customer email for paid order")
+	}
+
+	for _, item := range items {
+		for i := int32(0); i < item.quantity; i++ {
+			ticketID := uuid.New()
+			ticketCode := uuid.New()
+
+			if _, err := tx.ExecContext(ctx, `
+INSERT INTO tickets (
+    id,
+    code,
+    order_id,
+    order_item_id,
+    customer_name,
+    customer_email,
+    ticket_type_id,
+    ticket_type_name,
+    event_id,
+    event_title,
+    session_id,
+    session_starts_at,
+    session_ends_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+`, ticketID.String(),
+				ticketCode.String(),
+				orderIDText,
+				item.id,
+				strings.TrimSpace(customerName),
+				normalizedEmail,
+				item.ticketTypeID,
+				item.ticketTypeName,
+				item.eventID,
+				item.eventTitle,
+				item.sessionID,
+				item.sessionStartsAt,
+				item.sessionEndsAt,
+			); err != nil {
+				return err
+			}
+		}
 	}
 
 	if _, err := tx.ExecContext(ctx, `

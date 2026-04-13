@@ -375,6 +375,37 @@ func (h *Handler) GetCheckoutOrderByStripeSession(w http.ResponseWriter, r *http
 	responses.WriteJSON(w, http.StatusOK, order)
 }
 
+func (h *Handler) GetMyCheckoutOrderByStripeSession(w http.ResponseWriter, r *http.Request) {
+	claims, ok := httpmiddleware.ClaimsFromContext(r.Context())
+	if !ok {
+		responses.WriteError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	stripeSessionID := chi.URLParam(r, "stripeSessionID")
+	order, err := h.service.GetCheckoutOrderByStripeSessionID(r.Context(), stripeSessionID)
+	if err != nil {
+		logger.RequestError(r, "events.get_my_checkout_order_by_stripe_session", err)
+
+		switch {
+		case errors.Is(err, ErrInvalidStripeSessionID):
+			responses.WriteError(w, http.StatusBadRequest, err.Error())
+		case errors.Is(err, ErrCheckoutOrderNotFound):
+			responses.WriteError(w, http.StatusNotFound, err.Error())
+		default:
+			responses.WriteError(w, http.StatusInternalServerError, "internal server error")
+		}
+		return
+	}
+
+	if strings.ToLower(strings.TrimSpace(order.CustomerEmail)) != strings.ToLower(strings.TrimSpace(claims.Email)) {
+		responses.WriteError(w, http.StatusNotFound, ErrCheckoutOrderNotFound.Error())
+		return
+	}
+
+	responses.WriteJSON(w, http.StatusOK, order)
+}
+
 func (h *Handler) ListMyCheckoutOrders(w http.ResponseWriter, r *http.Request) {
 	claims, ok := httpmiddleware.ClaimsFromContext(r.Context())
 	if !ok {
@@ -400,6 +431,40 @@ func (h *Handler) ListMyCheckoutOrders(w http.ResponseWriter, r *http.Request) {
 	}
 
 	responses.WriteJSON(w, http.StatusOK, orders)
+}
+
+func (h *Handler) GetMyCheckoutOrder(w http.ResponseWriter, r *http.Request) {
+	claims, ok := httpmiddleware.ClaimsFromContext(r.Context())
+	if !ok {
+		responses.WriteError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	orderID, err := uuid.Parse(chi.URLParam(r, "orderID"))
+	if err != nil {
+		responses.WriteError(w, http.StatusBadRequest, "invalid order id")
+		return
+	}
+
+	order, err := h.service.GetCheckoutOrderSummaryByID(r.Context(), orderID)
+	if err != nil {
+		logger.RequestError(r, "events.get_my_checkout_order", err)
+
+		switch {
+		case errors.Is(err, ErrCheckoutOrderNotFound):
+			responses.WriteError(w, http.StatusNotFound, err.Error())
+		default:
+			responses.WriteError(w, http.StatusInternalServerError, "internal server error")
+		}
+		return
+	}
+
+	if strings.ToLower(strings.TrimSpace(order.CustomerEmail)) != strings.ToLower(strings.TrimSpace(claims.Email)) {
+		responses.WriteError(w, http.StatusNotFound, ErrCheckoutOrderNotFound.Error())
+		return
+	}
+
+	responses.WriteJSON(w, http.StatusOK, order)
 }
 
 func (h *Handler) StripeWebhook(w http.ResponseWriter, r *http.Request) {

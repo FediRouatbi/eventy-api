@@ -214,6 +214,10 @@ func (s *Service) GetCheckoutOrderByStripeSessionID(ctx context.Context, stripeS
 	return s.repository.GetCheckoutOrderByStripeSessionID(ctx, stripeSessionID)
 }
 
+func (s *Service) GetCheckoutOrderSummaryByID(ctx context.Context, orderID uuid.UUID) (CheckoutOrderSummary, error) {
+	return s.repository.GetCheckoutOrderSummaryByID(ctx, orderID)
+}
+
 func (s *Service) ListCheckoutOrdersByCustomerEmail(ctx context.Context, customerEmail string, limit int) ([]CheckoutOrderSummary, error) {
 	customerEmail = strings.TrimSpace(strings.ToLower(customerEmail))
 	if customerEmail == "" {

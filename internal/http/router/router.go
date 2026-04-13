@@ -10,13 +10,14 @@ import (
 	"eventy-api/internal/events"
 	"eventy-api/internal/http/middleware"
 	"eventy-api/internal/platform/roles"
+	"eventy-api/internal/tickets"
 	"eventy-api/internal/users"
 
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 )
 
-func New(adminsHandler *admins.Handler, authHandler *auth.Handler, categoriesHandler *categories.Handler, eventsHandler *events.Handler, usersHandler *users.Handler, authMiddleware *middleware.AuthMiddleware) http.Handler {
+func New(adminsHandler *admins.Handler, authHandler *auth.Handler, categoriesHandler *categories.Handler, eventsHandler *events.Handler, ticketsHandler *tickets.Handler, usersHandler *users.Handler, authMiddleware *middleware.AuthMiddleware) http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(chimiddleware.RequestID)
@@ -64,6 +65,11 @@ func New(adminsHandler *admins.Handler, authHandler *auth.Handler, categoriesHan
 		})
 
 		r.With(authMiddleware.RequireAuth).Get("/orders", eventsHandler.ListMyCheckoutOrders)
+		r.With(authMiddleware.RequireAuth).Get("/orders/{orderID}", eventsHandler.GetMyCheckoutOrder)
+		r.With(authMiddleware.RequireAuth).Get("/orders/stripe-sessions/{stripeSessionID}/checkout-order", eventsHandler.GetMyCheckoutOrderByStripeSession)
+
+		r.With(authMiddleware.RequireAuth).Get("/tickets", ticketsHandler.ListMyTickets)
+		r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin, roles.OrganizerAdmin)).Post("/tickets/check-in", ticketsHandler.CheckInTicket)
 
 		r.Route("/admins", func(r chi.Router) {
 			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin, roles.OrganizerAdmin)).Get("/overview", adminsHandler.GetOverview)
