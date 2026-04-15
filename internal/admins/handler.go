@@ -3,7 +3,10 @@ package admins
 import (
 	"encoding/json"
 	"errors"
+	"math"
 	"net/http"
+	"strconv"
+	"strings"
 
 	httpmiddleware "eventy-api/internal/http/middleware"
 	"eventy-api/internal/http/responses"
@@ -68,6 +71,41 @@ func (h *Handler) GetOverview(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case errors.Is(err, ErrOrganizerScopeRequired):
 			responses.WriteError(w, http.StatusForbidden, err.Error())
+		default:
+			responses.WriteError(w, http.StatusInternalServerError, "internal server error")
+		}
+		return
+	}
+
+	responses.WriteJSON(w, http.StatusOK, item)
+}
+
+func (h *Handler) GetPayments(w http.ResponseWriter, r *http.Request) {
+	claims, ok := httpmiddleware.ClaimsFromContext(r.Context())
+	if !ok {
+		responses.WriteError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	limit := 20
+	if rawLimit := strings.TrimSpace(r.URL.Query().Get("limit")); rawLimit != "" {
+		parsed, err := strconv.Atoi(rawLimit)
+		if err != nil || parsed <= 0 {
+			responses.WriteError(w, http.StatusBadRequest, ErrInvalidLimit.Error())
+			return
+		}
+		limit = int(math.Min(float64(parsed), 100))
+	}
+
+	item, err := h.service.GetPayments(r.Context(), claims, limit)
+	if err != nil {
+		logger.RequestError(r, "admins.get_payments", err)
+
+		switch {
+		case errors.Is(err, ErrOrganizerScopeRequired):
+			responses.WriteError(w, http.StatusForbidden, err.Error())
+		case errors.Is(err, ErrInvalidLimit):
+			responses.WriteError(w, http.StatusBadRequest, err.Error())
 		default:
 			responses.WriteError(w, http.StatusInternalServerError, "internal server error")
 		}

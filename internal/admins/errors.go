@@ -10,6 +10,7 @@ var (
 	ErrInvalidAdminName       = errors.New("admin_name is required")
 	ErrInvalidAdminEmail      = errors.New("admin_email must be a valid email")
 	ErrInvalidAdminPassword   = errors.New("admin_password must be at least 8 characters")
+	ErrInvalidLimit           = errors.New("limit must be a positive integer")
 	ErrOrganizerSlugExists    = errors.New("organizer slug already exists")
 	ErrOrganizerNotFound      = errors.New("organizer not found")
 	ErrAdminEmailExists       = errors.New("admin email already exists")

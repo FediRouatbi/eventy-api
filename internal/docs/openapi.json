@@ -25,6 +25,12 @@
       "name": "Events"
     },
     {
+      "name": "Orders"
+    },
+    {
+      "name": "Tickets"
+    },
+    {
       "name": "Users"
     }
   ],
@@ -49,6 +55,56 @@
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/admins/payments": {
+      "get": {
+        "tags": ["Admins"],
+        "summary": "Get admin payments",
+        "description": "Organizer admins and super admins can fetch payment analytics and latest payment records scoped to their access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum number of latest payment records to return (default 20, max 100).",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Admin payments analytics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminPayments"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
           },
           "401": {
             "$ref": "#/components/responses/ErrorResponse"
@@ -2083,6 +2139,249 @@
         }
       }
     },
+    "/v1/orders/{orderID}": {
+      "get": {
+        "tags": ["Orders"],
+        "summary": "Get my checkout order",
+        "description": "Returns a checkout order by id for the authenticated user (matched by email).",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "orderID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Checkout order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckoutOrderSummary"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/orders/stripe-sessions/{stripeSessionID}/checkout-order": {
+      "get": {
+        "tags": ["Orders"],
+        "summary": "Get my checkout order by Stripe session id",
+        "description": "Returns a checkout order by Stripe checkout session id for the authenticated user (matched by email).",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "stripeSessionID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Checkout order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckoutOrderSummary"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/tickets": {
+      "get": {
+        "tags": ["Tickets"],
+        "summary": "List my tickets",
+        "description": "Returns tickets for the authenticated user (matched by email).",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tickets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Ticket"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/tickets/code/{ticketCode}": {
+      "get": {
+        "tags": ["Tickets"],
+        "summary": "Get ticket by code",
+        "description": "Organizer admins and super admins can look up a ticket by its code.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ticketCode",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ticket",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ticket"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/tickets/check-in": {
+      "post": {
+        "tags": ["Tickets"],
+        "summary": "Check in ticket",
+        "description": "Marks a paid ticket as checked-in by code. Optionally validate event_id and session_id to enforce gate/session scope.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckInTicketInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Check-in result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckInResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
     "/v1/users/me": {
       "get": {
         "tags": ["Users"],
@@ -3086,6 +3385,72 @@
           "session_count": { "type": "integer", "example": 7 }
         }
       },
+      "AdminPayments": {
+        "type": "object",
+        "required": ["scope", "summary", "trends", "items"],
+        "properties": {
+          "scope": {
+            "type": "string",
+            "example": "super_admin"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/AdminPaymentsSummary"
+          },
+          "trends": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminPaymentTrend"
+            }
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminPaymentItem"
+            }
+          }
+        }
+      },
+      "AdminPaymentsSummary": {
+        "type": "object",
+        "required": ["gross", "paid_orders", "pending_orders", "failed_or_expired_orders", "average_order_value", "currency"],
+        "properties": {
+          "gross": { "type": "number", "format": "float", "example": 19450.5 },
+          "paid_orders": { "type": "integer", "example": 42 },
+          "pending_orders": { "type": "integer", "example": 7 },
+          "failed_or_expired_orders": { "type": "integer", "example": 3 },
+          "average_order_value": { "type": "number", "format": "float", "example": 463.11 },
+          "currency": { "type": "string", "example": "EUR" }
+        }
+      },
+      "AdminPaymentTrend": {
+        "type": "object",
+        "required": ["day", "gross", "paid_orders"],
+        "properties": {
+          "day": { "type": "string", "example": "2026-04-15" },
+          "gross": { "type": "number", "format": "float", "example": 1250.0 },
+          "paid_orders": { "type": "integer", "example": 4 }
+        }
+      },
+      "AdminPaymentItem": {
+        "type": "object",
+        "required": ["id", "order_number", "status", "amount", "currency", "customer_name", "customer_email", "created_at", "updated_at"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "order_number": { "type": "string" },
+          "status": { "type": "string", "example": "paid" },
+          "amount": { "type": "number", "format": "float", "example": 299.99 },
+          "currency": { "type": "string", "example": "EUR" },
+          "customer_name": { "type": "string" },
+          "customer_email": { "type": "string", "format": "email" },
+          "event_id": { "type": "string", "format": "uuid", "nullable": true },
+          "event_title": { "type": "string" },
+          "organizer_id": { "type": "string", "format": "uuid", "nullable": true },
+          "organizer_name": { "type": "string" },
+          "paid_at": { "type": "string", "format": "date-time", "nullable": true },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
       "OrganizerAdmin": {
         "type": "object",
         "required": ["id", "name", "email", "role", "organizer_id", "created_at", "updated_at"],
@@ -3650,10 +4015,70 @@
           "updated_at": { "type": "string", "format": "date-time" },
           "stripe_checkout_session_id": { "type": "string" },
           "paid_at": { "type": "string", "format": "date-time", "nullable": true },
+          "tickets_emailed_at": { "type": "string", "format": "date-time", "nullable": true },
           "items": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/CheckoutOrderItem" }
           }
+        }
+      },
+      "Ticket": {
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "order_id",
+          "order_number",
+          "order_status",
+          "customer_name",
+          "customer_email",
+          "ticket_type_id",
+          "ticket_type_name",
+          "event_id",
+          "event_title",
+          "session_id",
+          "session_starts_at",
+          "session_ends_at",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "code": { "type": "string" },
+          "order_id": { "type": "string", "format": "uuid" },
+          "order_number": { "type": "string" },
+          "order_status": { "type": "string" },
+          "customer_name": { "type": "string" },
+          "customer_email": { "type": "string", "format": "email" },
+          "ticket_type_id": { "type": "string", "format": "uuid" },
+          "ticket_type_name": { "type": "string" },
+          "event_id": { "type": "string", "format": "uuid" },
+          "event_title": { "type": "string" },
+          "session_id": { "type": "string", "format": "uuid" },
+          "session_starts_at": { "type": "string", "format": "date-time" },
+          "session_ends_at": { "type": "string", "format": "date-time" },
+          "paid_at": { "type": "string", "format": "date-time", "nullable": true },
+          "checked_in_at": { "type": "string", "format": "date-time", "nullable": true },
+          "checked_in_by_user_id": { "type": "string", "format": "uuid", "nullable": true },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CheckInTicketInput": {
+        "type": "object",
+        "required": ["code"],
+        "properties": {
+          "code": { "type": "string" },
+          "event_id": { "type": "string", "format": "uuid" },
+          "session_id": { "type": "string", "format": "uuid" }
+        }
+      },
+      "CheckInResult": {
+        "type": "object",
+        "required": ["ticket", "already_checked"],
+        "properties": {
+          "ticket": { "$ref": "#/components/schemas/Ticket" },
+          "already_checked": { "type": "boolean" }
         }
       }
     },

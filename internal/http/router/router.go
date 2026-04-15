@@ -69,10 +69,12 @@ func New(adminsHandler *admins.Handler, authHandler *auth.Handler, categoriesHan
 		r.With(authMiddleware.RequireAuth).Get("/orders/stripe-sessions/{stripeSessionID}/checkout-order", eventsHandler.GetMyCheckoutOrderByStripeSession)
 
 		r.With(authMiddleware.RequireAuth).Get("/tickets", ticketsHandler.ListMyTickets)
+		r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin, roles.OrganizerAdmin)).Get("/tickets/code/{ticketCode}", ticketsHandler.GetByCode)
 		r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin, roles.OrganizerAdmin)).Post("/tickets/check-in", ticketsHandler.CheckInTicket)
 
 		r.Route("/admins", func(r chi.Router) {
 			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin, roles.OrganizerAdmin)).Get("/overview", adminsHandler.GetOverview)
+			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin, roles.OrganizerAdmin)).Get("/payments", adminsHandler.GetPayments)
 			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin)).Get("/organizers", adminsHandler.ListOrganizers)
 			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin)).Post("/organizers", adminsHandler.CreateOrganizerAdmin)
 			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin)).Get("/organizers/{organizerID}", adminsHandler.GetOrganizer)

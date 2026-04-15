@@ -2316,6 +2316,7 @@ func (r *Repository) getCheckoutOrderSummaryByIDTx(ctx context.Context, tx *sql.
 		orderIDText       string
 		stripeSessionIDDB sql.NullString
 		paidAt            sql.NullTime
+		ticketsEmailedAt  sql.NullTime
 	)
 
 	if err := tx.QueryRowContext(ctx, `
@@ -2331,7 +2332,8 @@ SELECT
     created_at,
     updated_at,
     stripe_checkout_session_id,
-    paid_at
+    paid_at,
+    tickets_emailed_at
 FROM checkout_orders
 WHERE id = ?
 LIMIT 1
@@ -2348,6 +2350,7 @@ LIMIT 1
 		&order.UpdatedAt,
 		&stripeSessionIDDB,
 		&paidAt,
+		&ticketsEmailedAt,
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return CheckoutOrderSummary{}, ErrCheckoutOrderNotFound
@@ -2364,6 +2367,10 @@ LIMIT 1
 	if paidAt.Valid {
 		paidAtCopy := paidAt.Time
 		order.PaidAt = &paidAtCopy
+	}
+	if ticketsEmailedAt.Valid {
+		emailedAtCopy := ticketsEmailedAt.Time
+		order.TicketsEmailedAt = &emailedAtCopy
 	}
 
 	rows, err := tx.QueryContext(ctx, `
@@ -2440,6 +2447,7 @@ func (r *Repository) getCheckoutOrderSummaryByStripeSessionTx(ctx context.Contex
 		orderIDText       string
 		stripeSessionIDDB sql.NullString
 		paidAt            sql.NullTime
+		ticketsEmailedAt  sql.NullTime
 	)
 
 	if err := tx.QueryRowContext(ctx, `
@@ -2455,7 +2463,8 @@ SELECT
     created_at,
     updated_at,
     stripe_checkout_session_id,
-    paid_at
+    paid_at,
+    tickets_emailed_at
 FROM checkout_orders
 WHERE stripe_checkout_session_id = ?
 LIMIT 1
@@ -2472,6 +2481,7 @@ LIMIT 1
 		&order.UpdatedAt,
 		&stripeSessionIDDB,
 		&paidAt,
+		&ticketsEmailedAt,
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return CheckoutOrderSummary{}, ErrCheckoutOrderNotFound
@@ -2488,6 +2498,10 @@ LIMIT 1
 	if paidAt.Valid {
 		paidAtCopy := paidAt.Time
 		order.PaidAt = &paidAtCopy
+	}
+	if ticketsEmailedAt.Valid {
+		emailedAtCopy := ticketsEmailedAt.Time
+		order.TicketsEmailedAt = &emailedAtCopy
 	}
 
 	rows, err := tx.QueryContext(ctx, `
@@ -2558,26 +2572,32 @@ ORDER BY event_title ASC, session_starts_at ASC, ticket_type_name ASC
 	return order, nil
 }
 
-func (r *Repository) HandleStripeWebhook(ctx context.Context, stripeSecretKey string, webhookSecret string, payload []byte, signature string) error {
+type StripeWebhookOutcome struct {
+	EventType          string
+	StripeSessionID    string
+	ShouldEmailTickets bool
+}
+
+func (r *Repository) HandleStripeWebhook(ctx context.Context, stripeSecretKey string, webhookSecret string, payload []byte, signature string) (StripeWebhookOutcome, error) {
 	stripe.Key = strings.TrimSpace(stripeSecretKey)
 
 	webhookSecret = strings.TrimSpace(webhookSecret)
 	if webhookSecret == "" {
-		return ErrStripeNotConfigured
+		return StripeWebhookOutcome{}, ErrStripeNotConfigured
 	}
 
 	event, err := webhook.ConstructEventWithOptions(payload, signature, webhookSecret, webhook.ConstructEventOptions{
 		IgnoreAPIVersionMismatch: true,
 	})
 	if err != nil {
-		return err
+		return StripeWebhookOutcome{}, err
 	}
 
 	switch event.Type {
 	case "checkout.session.completed", "checkout.session.async_payment_succeeded":
 		var session stripe.CheckoutSession
 		if err := json.Unmarshal(event.Data.Raw, &session); err != nil {
-			return err
+			return StripeWebhookOutcome{}, err
 		}
 
 		paymentIntentID := ""
@@ -2590,17 +2610,41 @@ func (r *Repository) HandleStripeWebhook(ctx context.Context, stripeSecretKey st
 			customerID = session.Customer.ID
 		}
 
-		return r.markCheckoutOrderPaidByStripeSession(ctx, session.ID, paymentIntentID, customerID)
+		if err := r.markCheckoutOrderPaidByStripeSession(ctx, session.ID, paymentIntentID, customerID); err != nil {
+			return StripeWebhookOutcome{}, err
+		}
+
+		return StripeWebhookOutcome{
+			EventType:          string(event.Type),
+			StripeSessionID:    session.ID,
+			ShouldEmailTickets: true,
+		}, nil
 	case "checkout.session.expired":
 		var session stripe.CheckoutSession
 		if err := json.Unmarshal(event.Data.Raw, &session); err != nil {
-			return err
+			return StripeWebhookOutcome{}, err
 		}
 
-		return r.markCheckoutOrderExpiredByStripeSession(ctx, session.ID)
+		if err := r.markCheckoutOrderExpiredByStripeSession(ctx, session.ID); err != nil {
+			return StripeWebhookOutcome{}, err
+		}
+
+		return StripeWebhookOutcome{
+			EventType:       string(event.Type),
+			StripeSessionID: session.ID,
+		}, nil
 	default:
-		return nil
+		return StripeWebhookOutcome{EventType: string(event.Type)}, nil
 	}
+}
+
+func (r *Repository) MarkCheckoutOrderTicketsEmailed(ctx context.Context, orderID uuid.UUID) error {
+	_, err := r.db.ExecContext(ctx, `
+UPDATE checkout_orders
+SET tickets_emailed_at = COALESCE(tickets_emailed_at, UTC_TIMESTAMP())
+WHERE id = ?
+`, orderID.String())
+	return err
 }
 
 func (r *Repository) markCheckoutOrderExpiredByStripeSession(ctx context.Context, stripeSessionID string) error {

@@ -77,6 +77,7 @@ Required env vars (see `.env.example`):
 ## Admin endpoints
 
 - `GET /v1/admins/overview`
+- `GET /v1/admins/payments`
 - `GET /v1/admins/organizers`
 - `POST /v1/admins/organizers`
 - `GET /v1/admins/organizers/{organizerID}`

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"strings"
+	"time"
 
 	"eventy-api/internal/platform/roles"
 
@@ -550,6 +551,232 @@ LIMIT 6
 	}
 
 	return overview, nil
+}
+
+func (r *Repository) GetPayments(ctx context.Context, organizerID *uuid.UUID, includePlatformMetrics bool, limit int) (AdminPayments, error) {
+	payments := AdminPayments{
+		Scope: "organizer_admin",
+		Summary: AdminPaymentsSummary{
+			Currency: "EUR",
+		},
+		Trends: make([]AdminPaymentTrend, 0, 14),
+		Items:  make([]AdminPaymentItem, 0),
+	}
+	if includePlatformMetrics {
+		payments.Scope = "super_admin"
+	}
+
+	if limit <= 0 {
+		limit = 20
+	}
+	if limit > 100 {
+		limit = 100
+	}
+
+	scopeFilter := ""
+	scopeArgs := []any{}
+	if organizerID != nil {
+		scopeFilter = `
+  AND EXISTS (
+      SELECT 1
+      FROM checkout_order_items coi_scope
+      JOIN events e_scope ON e_scope.id = coi_scope.event_id
+      WHERE coi_scope.order_id = co.id
+        AND e_scope.organizer_id = ?
+  )`
+		scopeArgs = append(scopeArgs, organizerID.String())
+	}
+
+	var (
+		currencyDB sql.NullString
+	)
+	summaryArgs := append([]any{}, scopeArgs...)
+	if err := r.db.QueryRowContext(ctx, `
+SELECT
+    COALESCE(SUM(CASE WHEN co.status = 'paid' THEN co.subtotal ELSE 0 END), 0) AS gross,
+    COALESCE(SUM(CASE WHEN co.status = 'paid' THEN 1 ELSE 0 END), 0) AS paid_orders,
+    COALESCE(SUM(CASE WHEN co.status = 'pending_payment' THEN 1 ELSE 0 END), 0) AS pending_orders,
+    COALESCE(SUM(CASE WHEN co.status IN ('expired', 'cancelled', 'refunded', 'failed') THEN 1 ELSE 0 END), 0) AS failed_or_expired_orders,
+    COALESCE(MAX(CASE WHEN co.status = 'paid' THEN co.currency END), MAX(co.currency), 'EUR') AS currency
+FROM checkout_orders co
+WHERE 1 = 1`+scopeFilter, summaryArgs...).Scan(
+		&payments.Summary.Gross,
+		&payments.Summary.PaidOrders,
+		&payments.Summary.PendingOrders,
+		&payments.Summary.FailedOrExpired,
+		&currencyDB,
+	); err != nil {
+		return AdminPayments{}, err
+	}
+
+	payments.Summary.Currency = strings.ToUpper(strings.TrimSpace(currencyDB.String))
+	if payments.Summary.Currency == "" {
+		payments.Summary.Currency = "EUR"
+	}
+	if payments.Summary.PaidOrders > 0 {
+		payments.Summary.AverageOrderValue = payments.Summary.Gross / float64(payments.Summary.PaidOrders)
+	}
+
+	trendArgs := append([]any{}, scopeArgs...)
+	trendRows, err := r.db.QueryContext(ctx, `
+SELECT
+    DATE(co.paid_at) AS day,
+    COALESCE(SUM(co.subtotal), 0) AS gross,
+    COUNT(*) AS paid_orders
+FROM checkout_orders co
+WHERE co.status = 'paid'
+  AND co.paid_at IS NOT NULL
+  AND DATE(co.paid_at) >= (UTC_DATE() - INTERVAL 13 DAY)`+scopeFilter+`
+GROUP BY DATE(co.paid_at)
+ORDER BY day ASC
+`, trendArgs...)
+	if err != nil {
+		return AdminPayments{}, err
+	}
+	defer trendRows.Close()
+
+	trendByDay := make(map[string]AdminPaymentTrend, 14)
+	for trendRows.Next() {
+		var (
+			day string
+			row AdminPaymentTrend
+		)
+		if err := trendRows.Scan(&day, &row.Gross, &row.PaidOrders); err != nil {
+			return AdminPayments{}, err
+		}
+
+		day = strings.TrimSpace(day)
+		if day == "" {
+			continue
+		}
+		row.Day = day
+		trendByDay[day] = row
+	}
+	if err := trendRows.Err(); err != nil {
+		return AdminPayments{}, err
+	}
+
+	today := time.Now().UTC()
+	for offset := 13; offset >= 0; offset-- {
+		day := today.AddDate(0, 0, -offset).Format("2006-01-02")
+		if row, ok := trendByDay[day]; ok {
+			payments.Trends = append(payments.Trends, row)
+			continue
+		}
+
+		payments.Trends = append(payments.Trends, AdminPaymentTrend{
+			Day:        day,
+			Gross:      0,
+			PaidOrders: 0,
+		})
+	}
+
+	itemArgs := append([]any{}, scopeArgs...)
+	itemArgs = append(itemArgs, limit)
+	itemRows, err := r.db.QueryContext(ctx, `
+SELECT
+    co.id,
+    co.order_number,
+    co.status,
+    co.subtotal,
+    co.currency,
+    co.customer_name,
+    co.customer_email,
+    MIN(coi.event_id) AS event_id,
+    MIN(coi.event_title) AS event_title,
+    MIN(e.organizer_id) AS organizer_id,
+    MIN(o.name) AS organizer_name,
+    co.paid_at,
+    co.created_at,
+    co.updated_at
+FROM checkout_orders co
+LEFT JOIN checkout_order_items coi ON coi.order_id = co.id
+LEFT JOIN events e ON e.id = coi.event_id
+LEFT JOIN organizers o ON o.id = e.organizer_id
+WHERE 1 = 1`+scopeFilter+`
+GROUP BY
+    co.id,
+    co.order_number,
+    co.status,
+    co.subtotal,
+    co.currency,
+    co.customer_name,
+    co.customer_email,
+    co.paid_at,
+    co.created_at,
+    co.updated_at
+ORDER BY COALESCE(co.paid_at, co.created_at) DESC, co.created_at DESC
+LIMIT ?
+`, itemArgs...)
+	if err != nil {
+		return AdminPayments{}, err
+	}
+	defer itemRows.Close()
+
+	for itemRows.Next() {
+		var (
+			item            AdminPaymentItem
+			orderIDText     string
+			eventIDDB       sql.NullString
+			eventTitleDB    sql.NullString
+			organizerIDDB   sql.NullString
+			organizerNameDB sql.NullString
+			paidAtDB        sql.NullTime
+		)
+
+		if err := itemRows.Scan(
+			&orderIDText,
+			&item.OrderNumber,
+			&item.Status,
+			&item.Amount,
+			&item.Currency,
+			&item.CustomerName,
+			&item.CustomerEmail,
+			&eventIDDB,
+			&eventTitleDB,
+			&organizerIDDB,
+			&organizerNameDB,
+			&paidAtDB,
+			&item.CreatedAt,
+			&item.UpdatedAt,
+		); err != nil {
+			return AdminPayments{}, err
+		}
+
+		parsedOrderID, err := uuid.Parse(orderIDText)
+		if err != nil {
+			return AdminPayments{}, err
+		}
+		item.ID = parsedOrderID
+
+		if eventIDDB.Valid {
+			parsedEventID, err := uuid.Parse(strings.TrimSpace(eventIDDB.String))
+			if err == nil {
+				item.EventID = &parsedEventID
+			}
+		}
+		if organizerIDDB.Valid {
+			parsedOrganizerID, err := uuid.Parse(strings.TrimSpace(organizerIDDB.String))
+			if err == nil {
+				item.OrganizerID = &parsedOrganizerID
+			}
+		}
+
+		item.EventTitle = strings.TrimSpace(eventTitleDB.String)
+		item.OrganizerName = strings.TrimSpace(organizerNameDB.String)
+
+		if paidAtDB.Valid {
+			paidAt := paidAtDB.Time
+			item.PaidAt = &paidAt
+		}
+
+		payments.Items = append(payments.Items, item)
+	}
+	if err := itemRows.Err(); err != nil {
+		return AdminPayments{}, err
+	}
+
+	return payments, nil
 }
 
 func (r *Repository) ListOrganizers(ctx context.Context) ([]OrganizerListItem, error) {

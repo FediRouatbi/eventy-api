@@ -47,6 +47,28 @@ func (s *Service) GetOverview(ctx context.Context, claims *jwt.Claims) (AdminOve
 	}
 }
 
+func (s *Service) GetPayments(ctx context.Context, claims *jwt.Claims, limit int) (AdminPayments, error) {
+	if limit <= 0 {
+		return AdminPayments{}, ErrInvalidLimit
+	}
+	if limit > 100 {
+		limit = 100
+	}
+
+	switch claims.Role {
+	case roles.SuperAdmin:
+		return s.repository.GetPayments(ctx, nil, true, limit)
+	case roles.OrganizerAdmin:
+		if claims.OrganizerID == nil {
+			return AdminPayments{}, ErrOrganizerScopeRequired
+		}
+
+		return s.repository.GetPayments(ctx, claims.OrganizerID, false, limit)
+	default:
+		return AdminPayments{}, ErrOrganizerScopeRequired
+	}
+}
+
 func (s *Service) UpdateOrganizer(ctx context.Context, organizerID uuid.UUID, input UpdateOrganizerInput) (Organizer, error) {
 	input.OrganizerName = strings.TrimSpace(input.OrganizerName)
 	input.OrganizerSlug = strings.TrimSpace(input.OrganizerSlug)

@@ -49,19 +49,19 @@ func New(cfg config.Config) (*App, error) {
 	adminsHandler := admins.NewHandler(adminsService)
 	categoriesRepository := categories.NewRepository(queries)
 	eventsRepository := events.NewRepository(postgresDB, queries)
+	ticketsRepository := tickets.NewRepository(postgresDB)
 	eventsService := events.NewService(eventsRepository, events.StripeConfig{
 		SecretKey:     cfg.StripeSecretKey,
 		WebhookSecret: cfg.StripeWebhookKey,
 		SuccessURL:    cfg.StripeSuccessURL,
 		CancelURL:     cfg.StripeCancelURL,
-	})
+	}, cfg.WebBaseURL, registrationMailer, ticketsRepository)
 	eventsHandler := events.NewHandler(eventsService)
 	categoriesService := categories.NewService(categoriesRepository, eventsRepository)
 	categoriesHandler := categories.NewHandler(categoriesService)
 	usersRepository := users.NewRepository(queries)
 	usersService := users.NewService(usersRepository)
 	usersHandler := users.NewHandler(usersService)
-	ticketsRepository := tickets.NewRepository(postgresDB)
 	ticketsService := tickets.NewService(ticketsRepository)
 	ticketsHandler := tickets.NewHandler(ticketsService)
 	authMiddleware := httpmiddleware.NewAuthMiddleware(tokenManager)

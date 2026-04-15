@@ -164,6 +164,45 @@ type AdminOverviewOrganizerSummary struct {
 	SessionCount int       `json:"session_count"`
 }
 
+type AdminPayments struct {
+	Scope   string               `json:"scope"`
+	Summary AdminPaymentsSummary `json:"summary"`
+	Trends  []AdminPaymentTrend  `json:"trends"`
+	Items   []AdminPaymentItem   `json:"items"`
+}
+
+type AdminPaymentsSummary struct {
+	Gross             float64 `json:"gross"`
+	PaidOrders        int     `json:"paid_orders"`
+	PendingOrders     int     `json:"pending_orders"`
+	FailedOrExpired   int     `json:"failed_or_expired_orders"`
+	AverageOrderValue float64 `json:"average_order_value"`
+	Currency          string  `json:"currency"`
+}
+
+type AdminPaymentTrend struct {
+	Day        string  `json:"day"`
+	Gross      float64 `json:"gross"`
+	PaidOrders int     `json:"paid_orders"`
+}
+
+type AdminPaymentItem struct {
+	ID            uuid.UUID  `json:"id"`
+	OrderNumber   string     `json:"order_number"`
+	Status        string     `json:"status"`
+	Amount        float64    `json:"amount"`
+	Currency      string     `json:"currency"`
+	CustomerName  string     `json:"customer_name"`
+	CustomerEmail string     `json:"customer_email"`
+	EventID       *uuid.UUID `json:"event_id,omitempty"`
+	EventTitle    string     `json:"event_title,omitempty"`
+	OrganizerID   *uuid.UUID `json:"organizer_id,omitempty"`
+	OrganizerName string     `json:"organizer_name,omitempty"`
+	PaidAt        *time.Time `json:"paid_at,omitempty"`
+	CreatedAt     time.Time  `json:"created_at"`
+	UpdatedAt     time.Time  `json:"updated_at"`
+}
+
 type OrganizerAdmin struct {
 	ID          uuid.UUID `json:"id"`
 	Name        string    `json:"name"`

@@ -11,6 +11,8 @@ import (
 	httpmiddleware "eventy-api/internal/http/middleware"
 	"eventy-api/internal/http/responses"
 	"eventy-api/internal/platform/logger"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type Handler struct {
@@ -49,7 +51,9 @@ func (h *Handler) ListMyTickets(w http.ResponseWriter, r *http.Request) {
 }
 
 type checkInTicketRequest struct {
-	Code string `json:"code"`
+	Code      string `json:"code"`
+	EventID   string `json:"event_id,omitempty"`
+	SessionID string `json:"session_id,omitempty"`
 }
 
 func (h *Handler) CheckInTicket(w http.ResponseWriter, r *http.Request) {
@@ -69,16 +73,26 @@ func (h *Handler) CheckInTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.service.CheckInTicket(r.Context(), claims, input.Code)
+	var result CheckInResult
+	var err error
+	if strings.TrimSpace(input.EventID) != "" || strings.TrimSpace(input.SessionID) != "" {
+		result, err = h.service.CheckInTicketForSession(r.Context(), claims, input.Code, input.EventID, input.SessionID)
+	} else {
+		result, err = h.service.CheckInTicket(r.Context(), claims, input.Code)
+	}
 	if err != nil {
 		logger.RequestError(r, "tickets.check_in", err)
 
 		switch {
 		case errors.Is(err, ErrInvalidTicketCode):
 			responses.WriteError(w, http.StatusBadRequest, err.Error())
+		case errors.Is(err, ErrInvalidEventID), errors.Is(err, ErrInvalidSessionID):
+			responses.WriteError(w, http.StatusBadRequest, err.Error())
 		case errors.Is(err, ErrTicketNotFound):
 			responses.WriteError(w, http.StatusNotFound, err.Error())
 		case errors.Is(err, ErrTicketNotPaid):
+			responses.WriteError(w, http.StatusConflict, err.Error())
+		case errors.Is(err, ErrTicketEventMismatch), errors.Is(err, ErrTicketSessionMismatch):
 			responses.WriteError(w, http.StatusConflict, err.Error())
 		case errors.Is(err, ErrOrganizerScopeMissing), errors.Is(err, ErrForbidden):
 			responses.WriteError(w, http.StatusForbidden, err.Error())
@@ -89,4 +103,32 @@ func (h *Handler) CheckInTicket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	responses.WriteJSON(w, http.StatusOK, result)
+}
+
+func (h *Handler) GetByCode(w http.ResponseWriter, r *http.Request) {
+	claims, ok := httpmiddleware.ClaimsFromContext(r.Context())
+	if !ok {
+		responses.WriteError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	code := chi.URLParam(r, "ticketCode")
+	ticket, err := h.service.GetTicketByCode(r.Context(), claims, code)
+	if err != nil {
+		logger.RequestError(r, "tickets.get_by_code", err)
+
+		switch {
+		case errors.Is(err, ErrInvalidTicketCode):
+			responses.WriteError(w, http.StatusBadRequest, err.Error())
+		case errors.Is(err, ErrTicketNotFound):
+			responses.WriteError(w, http.StatusNotFound, err.Error())
+		case errors.Is(err, ErrOrganizerScopeMissing), errors.Is(err, ErrForbidden):
+			responses.WriteError(w, http.StatusForbidden, err.Error())
+		default:
+			responses.WriteError(w, http.StatusInternalServerError, "internal server error")
+		}
+		return
+	}
+
+	responses.WriteJSON(w, http.StatusOK, ticket)
 }

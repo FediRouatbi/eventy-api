@@ -2,18 +2,33 @@ package events
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"strings"
 	"time"
 
+	"eventy-api/internal/platform/email"
 	"eventy-api/internal/platform/jwt"
 	"eventy-api/internal/platform/roles"
+	"eventy-api/internal/tickets"
 
 	"github.com/google/uuid"
 )
 
+type ticketsMailer interface {
+	SendTicketsIssued(toEmail string, toName string, orderNumber string, viewTicketsURL string, tickets []email.TicketIssuedItem) error
+}
+
+type ticketsRepository interface {
+	ListByOrderID(ctx context.Context, orderID uuid.UUID) ([]tickets.Ticket, error)
+}
+
 type Service struct {
 	repository *Repository
 	stripeCfg  StripeConfig
+	webBaseURL string
+	mailer     ticketsMailer
+	tickets    ticketsRepository
 }
 
 type StripeConfig struct {
@@ -23,8 +38,14 @@ type StripeConfig struct {
 	CancelURL     string
 }
 
-func NewService(repository *Repository, stripeCfg StripeConfig) *Service {
-	return &Service{repository: repository, stripeCfg: stripeCfg}
+func NewService(repository *Repository, stripeCfg StripeConfig, webBaseURL string, mailer ticketsMailer, ticketsRepo ticketsRepository) *Service {
+	return &Service{
+		repository: repository,
+		stripeCfg:  stripeCfg,
+		webBaseURL: strings.TrimRight(strings.TrimSpace(webBaseURL), "/"),
+		mailer:     mailer,
+		tickets:    ticketsRepo,
+	}
 }
 
 func (s *Service) Create(ctx context.Context, claims *jwt.Claims, input CreateEventInput) (Event, error) {
@@ -239,7 +260,58 @@ func (s *Service) HandleStripeWebhook(ctx context.Context, payload []byte, signa
 		return ErrStripeNotConfigured
 	}
 
-	return s.repository.HandleStripeWebhook(ctx, s.stripeCfg.SecretKey, s.stripeCfg.WebhookSecret, payload, signature)
+	outcome, err := s.repository.HandleStripeWebhook(ctx, s.stripeCfg.SecretKey, s.stripeCfg.WebhookSecret, payload, signature)
+	if err != nil {
+		return err
+	}
+
+	if !outcome.ShouldEmailTickets {
+		return nil
+	}
+
+	if s.mailer == nil || s.tickets == nil || strings.TrimSpace(s.webBaseURL) == "" {
+		return errors.New("ticket email is not configured")
+	}
+
+	order, err := s.repository.GetCheckoutOrderByStripeSessionID(ctx, outcome.StripeSessionID)
+	if err != nil {
+		return err
+	}
+
+	if order.Status != "paid" {
+		return nil
+	}
+
+	if order.TicketsEmailedAt != nil {
+		return nil
+	}
+
+	issued, err := s.tickets.ListByOrderID(ctx, order.ID)
+	if err != nil {
+		return err
+	}
+	if len(issued) == 0 {
+		return fmt.Errorf("paid order has no tickets: order_id=%s", order.ID.String())
+	}
+
+	viewURL := s.webBaseURL + "/tickets"
+	items := make([]email.TicketIssuedItem, 0, len(issued))
+	for _, ticket := range issued {
+		items = append(items, email.TicketIssuedItem{
+			Code:            ticket.Code,
+			QRPayload:       fmt.Sprintf("eventy:ticket?code=%s&event_id=%s&session_id=%s", ticket.Code, ticket.EventID.String(), ticket.SessionID.String()),
+			EventTitle:      ticket.EventTitle,
+			TicketTypeName:  ticket.TicketTypeName,
+			SessionStartsAt: ticket.SessionStartsAt,
+			SessionEndsAt:   ticket.SessionEndsAt,
+		})
+	}
+
+	if err := s.mailer.SendTicketsIssued(order.CustomerEmail, order.CustomerName, order.OrderNumber, viewURL, items); err != nil {
+		return err
+	}
+
+	return s.repository.MarkCheckoutOrderTicketsEmailed(ctx, order.ID)
 }
 
 func (s *Service) GetByID(ctx context.Context, claims *jwt.Claims, eventID uuid.UUID) (Event, error) {
