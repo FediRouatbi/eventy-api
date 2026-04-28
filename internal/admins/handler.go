@@ -3,10 +3,12 @@ package admins
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	httpmiddleware "eventy-api/internal/http/middleware"
 	"eventy-api/internal/http/responses"
@@ -113,6 +115,95 @@ func (h *Handler) GetPayments(w http.ResponseWriter, r *http.Request) {
 	}
 
 	responses.WriteJSON(w, http.StatusOK, item)
+}
+
+func (h *Handler) ExportPaymentsCSV(w http.ResponseWriter, r *http.Request) {
+	claims, ok := httpmiddleware.ClaimsFromContext(r.Context())
+	if !ok {
+		responses.WriteError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	nowUTC := time.Now().UTC()
+	defaultFrom := time.Date(nowUTC.Year(), nowUTC.Month(), nowUTC.Day(), 0, 0, 0, 0, time.UTC).AddDate(0, 0, -29)
+	defaultTo := time.Date(nowUTC.Year(), nowUTC.Month(), nowUTC.Day(), 0, 0, 0, 0, time.UTC)
+
+	fromDate := defaultFrom
+	toDate := defaultTo
+
+	fromRaw := strings.TrimSpace(r.URL.Query().Get("from"))
+	if fromRaw != "" {
+		parsed, err := time.Parse("2006-01-02", fromRaw)
+		if err != nil {
+			responses.WriteError(w, http.StatusBadRequest, ErrInvalidFromDate.Error())
+			return
+		}
+		fromDate = parsed.UTC()
+	}
+
+	toRaw := strings.TrimSpace(r.URL.Query().Get("to"))
+	if toRaw != "" {
+		parsed, err := time.Parse("2006-01-02", toRaw)
+		if err != nil {
+			responses.WriteError(w, http.StatusBadRequest, ErrInvalidToDate.Error())
+			return
+		}
+		toDate = parsed.UTC()
+	}
+
+	if toDate.Before(fromDate) {
+		responses.WriteError(w, http.StatusBadRequest, ErrInvalidDateRange.Error())
+		return
+	}
+	if toDate.Sub(fromDate) > 365*24*time.Hour {
+		responses.WriteError(w, http.StatusBadRequest, ErrInvalidDateRangeWindow.Error())
+		return
+	}
+
+	filters := AdminPaymentsExportFilters{
+		FromDate: fromDate,
+		ToDate:   toDate,
+	}
+
+	timezoneLabel := "UTC"
+	timezoneRaw := strings.TrimSpace(r.URL.Query().Get("timezone"))
+	if timezoneRaw != "" {
+		if _, err := time.LoadLocation(timezoneRaw); err != nil {
+			responses.WriteError(w, http.StatusBadRequest, ErrInvalidTimezone.Error())
+			return
+		}
+		timezoneLabel = timezoneRaw
+	}
+
+	if organizerIDRaw := strings.TrimSpace(r.URL.Query().Get("organizer_id")); organizerIDRaw != "" {
+		parsedOrganizerID, err := uuid.Parse(organizerIDRaw)
+		if err != nil {
+			responses.WriteError(w, http.StatusBadRequest, ErrInvalidOrganizerID.Error())
+			return
+		}
+		filters.OrganizerID = &parsedOrganizerID
+	}
+
+	content, filename, err := h.service.ExportPaymentsCSV(r.Context(), claims, filters, timezoneLabel)
+	if err != nil {
+		logger.RequestError(r, "admins.export_payments_csv", err)
+
+		switch {
+		case errors.Is(err, ErrOrganizerScopeRequired):
+			responses.WriteError(w, http.StatusForbidden, err.Error())
+		default:
+			responses.WriteError(w, http.StatusInternalServerError, "internal server error")
+		}
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+	w.Header().Set(
+		"Content-Disposition",
+		fmt.Sprintf(`attachment; filename="%s"`, strings.ReplaceAll(filename, `"`, "")),
+	)
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(content)
 }
 
 func (h *Handler) ListOrganizers(w http.ResponseWriter, r *http.Request) {

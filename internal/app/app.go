@@ -43,7 +43,11 @@ func New(cfg config.Config) (*App, error) {
 	)
 	authRepository := auth.NewRepository(queries)
 	authService := auth.NewService(authRepository, tokenManager, registrationMailer, cfg.RegisterOTPTTL, cfg.RefreshTokenTTL)
-	authHandler := auth.NewHandler(authService)
+	authHandler := auth.NewHandler(authService, auth.CookieSettings{
+		RefreshTokenName: cfg.RefreshCookieName,
+		Domain:           cfg.RefreshCookieDomain,
+		Secure:           cfg.RefreshCookieSecure,
+	})
 	adminsRepository := admins.NewRepository(postgresDB)
 	adminsService := admins.NewService(adminsRepository)
 	adminsHandler := admins.NewHandler(adminsService)
@@ -65,12 +69,13 @@ func New(cfg config.Config) (*App, error) {
 	ticketsService := tickets.NewService(ticketsRepository)
 	ticketsHandler := tickets.NewHandler(ticketsService)
 	authMiddleware := httpmiddleware.NewAuthMiddleware(tokenManager)
+	corsMiddleware := httpmiddleware.NewCORS(cfg.CORSAllowedOrigins)
 
 	ctx, stop := context.WithCancel(context.Background())
 	startMaintenance(ctx, eventsRepository)
 
 	return &App{
-		Router: router.New(adminsHandler, authHandler, categoriesHandler, eventsHandler, ticketsHandler, usersHandler, authMiddleware),
+		Router: router.New(adminsHandler, authHandler, categoriesHandler, eventsHandler, ticketsHandler, usersHandler, authMiddleware, corsMiddleware),
 		db:     postgresDB,
 		stop:   stop,
 	}, nil

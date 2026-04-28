@@ -158,6 +158,8 @@ Login and verify-register now return:
 }
 ```
 
+They also set `Set-Cookie: eventy_refresh_token=...; HttpOnly; SameSite=Lax` (name configurable via `REFRESH_COOKIE_NAME`).
+
 ### Forgot Password
 
 ```json
@@ -178,6 +180,8 @@ Login and verify-register now return:
 
 ### Refresh Session
 
+You can send refresh token in either request body or HttpOnly cookie:
+
 ```json
 {
   "refresh_token": "opaque-token"
@@ -197,7 +201,7 @@ Send `Authorization: Bearer <access_token>` and:
 
 ### Logout
 
-Send `Authorization: Bearer <access_token>` and:
+Send `Authorization: Bearer <access_token>`. Refresh token can come from request body or cookie:
 
 ```json
 {

@@ -1,8 +1,12 @@
 package admins
 
 import (
+	"bytes"
 	"context"
+	"encoding/csv"
+	"fmt"
 	"strings"
+	"time"
 
 	"eventy-api/internal/platform/jwt"
 	"eventy-api/internal/platform/roles"
@@ -67,6 +71,95 @@ func (s *Service) GetPayments(ctx context.Context, claims *jwt.Claims, limit int
 	default:
 		return AdminPayments{}, ErrOrganizerScopeRequired
 	}
+}
+
+func (s *Service) ExportPaymentsCSV(ctx context.Context, claims *jwt.Claims, filters AdminPaymentsExportFilters, timezoneLabel string) ([]byte, string, error) {
+	var (
+		rows []AdminPaymentExportRow
+		err  error
+	)
+
+	switch claims.Role {
+	case roles.SuperAdmin:
+		rows, err = s.repository.ListPaymentsForExport(ctx, filters)
+	case roles.OrganizerAdmin:
+		if claims.OrganizerID == nil {
+			return nil, "", ErrOrganizerScopeRequired
+		}
+
+		filters.OrganizerID = claims.OrganizerID
+		rows, err = s.repository.ListPaymentsForExport(ctx, filters)
+	default:
+		return nil, "", ErrOrganizerScopeRequired
+	}
+	if err != nil {
+		return nil, "", err
+	}
+
+	buf := &bytes.Buffer{}
+	writer := csv.NewWriter(buf)
+
+	if err := writer.Write([]string{
+		"order_id",
+		"order_number",
+		"status",
+		"amount",
+		"currency",
+		"customer_name",
+		"customer_email",
+		"event_titles",
+		"organizer_id",
+		"organizer_name",
+		"paid_at",
+		"created_at",
+		"updated_at",
+	}); err != nil {
+		return nil, "", err
+	}
+
+	for _, row := range rows {
+		organizerID := ""
+		if row.OrganizerID != nil {
+			organizerID = row.OrganizerID.String()
+		}
+
+		paidAt := ""
+		if row.PaidAt != nil {
+			paidAt = row.PaidAt.UTC().Format(time.RFC3339)
+		}
+
+		if err := writer.Write([]string{
+			row.OrderID.String(),
+			row.OrderNumber,
+			row.Status,
+			fmt.Sprintf("%.2f", row.Amount),
+			row.Currency,
+			row.CustomerName,
+			row.CustomerEmail,
+			row.EventTitles,
+			organizerID,
+			row.OrganizerName,
+			paidAt,
+			row.CreatedAt.UTC().Format(time.RFC3339),
+			row.UpdatedAt.UTC().Format(time.RFC3339),
+		}); err != nil {
+			return nil, "", err
+		}
+	}
+
+	writer.Flush()
+	if err := writer.Error(); err != nil {
+		return nil, "", err
+	}
+
+	filename := fmt.Sprintf(
+		"finance-export-%s-to-%s-%s.csv",
+		filters.FromDate.UTC().Format("2006-01-02"),
+		filters.ToDate.UTC().Format("2006-01-02"),
+		strings.NewReplacer("/", "-", "\\", "-", " ", "_", ":", "-").Replace(strings.TrimSpace(timezoneLabel)),
+	)
+
+	return buf.Bytes(), filename, nil
 }
 
 func (s *Service) UpdateOrganizer(ctx context.Context, organizerID uuid.UUID, input UpdateOrganizerInput) (Organizer, error) {

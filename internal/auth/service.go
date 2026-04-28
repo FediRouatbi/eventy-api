@@ -15,19 +15,31 @@ type registrationMailer interface {
 	SendPasswordResetOTP(toEmail string, otpCode string) error
 }
 
+type GoogleIdentity struct {
+	Email         string
+	Name          string
+	EmailVerified bool
+}
+
+type GoogleVerifier interface {
+	VerifyIDToken(ctx context.Context, idToken string) (GoogleIdentity, error)
+}
+
 type Service struct {
 	repository   *Repository
 	tokenManager *jwt.Manager
 	mailer       registrationMailer
+	googleVerifier GoogleVerifier
 	registerTTL  time.Duration
 	refreshTTL   time.Duration
 }
 
-func NewService(repository *Repository, tokenManager *jwt.Manager, mailer registrationMailer, registerTTL time.Duration, refreshTTL time.Duration) *Service {
+func NewService(repository *Repository, tokenManager *jwt.Manager, mailer registrationMailer, googleVerifier GoogleVerifier, registerTTL time.Duration, refreshTTL time.Duration) *Service {
 	return &Service{
 		repository:   repository,
 		tokenManager: tokenManager,
 		mailer:       mailer,
+		googleVerifier: googleVerifier,
 		registerTTL:  registerTTL,
 		refreshTTL:   refreshTTL,
 	}
@@ -126,6 +138,58 @@ func (s *Service) Login(ctx context.Context, input LoginInput) (AuthResult, erro
 
 	if err := comparePassword(passwordHash, input.Password); err != nil {
 		return AuthResult{}, ErrInvalidCredentials
+	}
+
+	return s.createAuthResult(ctx, user)
+}
+
+func (s *Service) LoginWithGoogle(ctx context.Context, input GoogleLoginInput) (AuthResult, error) {
+	input.IDToken = strings.TrimSpace(input.IDToken)
+	input.Platform = strings.TrimSpace(input.Platform)
+
+	if err := validateGoogleLoginInput(input); err != nil {
+		return AuthResult{}, err
+	}
+
+	if s.googleVerifier == nil {
+		return AuthResult{}, ErrInvalidGoogleToken
+	}
+
+	identity, err := s.googleVerifier.VerifyIDToken(ctx, input.IDToken)
+	if err != nil {
+		return AuthResult{}, ErrInvalidGoogleToken
+	}
+
+	identity.Email = normalizeEmail(identity.Email)
+	identity.Name = strings.TrimSpace(identity.Name)
+	if !identity.EmailVerified || !isValidEmail(identity.Email) {
+		return AuthResult{}, ErrInvalidGoogleToken
+	}
+	if identity.Name == "" {
+		identity.Name = identity.Email
+	}
+
+	user, _, err := s.repository.GetUserByEmail(ctx, identity.Email)
+	if err != nil {
+		if !errors.Is(err, ErrInvalidCredentials) {
+			return AuthResult{}, err
+		}
+
+		passwordHash, hashErr := hashPassword(uuid.NewString())
+		if hashErr != nil {
+			return AuthResult{}, hashErr
+		}
+
+		user, err = s.repository.CreateUser(ctx, RegisterInput{
+			Name:     identity.Name,
+			Email:    identity.Email,
+			Password: "",
+		}, passwordHash)
+		if err != nil {
+			return AuthResult{}, err
+		}
+
+		_ = s.repository.DeletePendingRegistrationByEmail(ctx, identity.Email)
 	}
 
 	return s.createAuthResult(ctx, user)
@@ -302,7 +366,7 @@ func (s *Service) RefreshSession(ctx context.Context, input RefreshTokenInput) (
 	return s.rotateSessionAndIssueTokens(ctx, session.ID, user)
 }
 
-func (s *Service) Logout(ctx context.Context, input LogoutInput) (MessageResponse, error) {
+func (s *Service) Logout(ctx context.Context, userID uuid.UUID, input LogoutInput) (MessageResponse, error) {
 	input.RefreshToken = strings.TrimSpace(input.RefreshToken)
 
 	if err := validateLogoutInput(input); err != nil {
@@ -316,6 +380,14 @@ func (s *Service) Logout(ctx context.Context, input LogoutInput) (MessageRespons
 
 	if session.RevokedAt.Valid {
 		return MessageResponse{}, ErrSessionRevoked
+	}
+
+	sessionUserID, err := uuid.Parse(session.UserID)
+	if err != nil {
+		return MessageResponse{}, err
+	}
+	if sessionUserID != userID {
+		return MessageResponse{}, ErrInvalidRefreshToken
 	}
 
 	if err := s.repository.RevokeSession(ctx, session.ID); err != nil {

@@ -203,6 +203,28 @@ type AdminPaymentItem struct {
 	UpdatedAt     time.Time  `json:"updated_at"`
 }
 
+type AdminPaymentsExportFilters struct {
+	FromDate    time.Time
+	ToDate      time.Time
+	OrganizerID *uuid.UUID
+}
+
+type AdminPaymentExportRow struct {
+	OrderID       uuid.UUID
+	OrderNumber   string
+	Status        string
+	Amount        float64
+	Currency      string
+	CustomerName  string
+	CustomerEmail string
+	EventTitles   string
+	OrganizerID   *uuid.UUID
+	OrganizerName string
+	PaidAt        *time.Time
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+}
+
 type OrganizerAdmin struct {
 	ID          uuid.UUID `json:"id"`
 	Name        string    `json:"name"`

@@ -17,6 +17,11 @@ type LoginInput struct {
 	Password string `json:"password"`
 }
 
+type GoogleLoginInput struct {
+	IDToken  string `json:"id_token"`
+	Platform string `json:"platform"`
+}
+
 type RefreshTokenInput struct {
 	RefreshToken string `json:"refresh_token"`
 }

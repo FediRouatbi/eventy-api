@@ -16,7 +16,14 @@ import (
 )
 
 type ticketsMailer interface {
-	SendTicketsIssued(toEmail string, toName string, orderNumber string, viewTicketsURL string, tickets []email.TicketIssuedItem) error
+	SendTicketsIssued(
+		toEmail string,
+		toName string,
+		orderNumber string,
+		viewTicketsURL string,
+		tickets []email.TicketIssuedItem,
+		attachment *email.EmailAttachment,
+	) error
 }
 
 type ticketsRepository interface {
@@ -307,7 +314,42 @@ func (s *Service) HandleStripeWebhook(ctx context.Context, payload []byte, signa
 		})
 	}
 
-	if err := s.mailer.SendTicketsIssued(order.CustomerEmail, order.CustomerName, order.OrderNumber, viewURL, items); err != nil {
+	receiptItems := make([]email.ReceiptPDFItem, 0, len(order.Items))
+	for _, item := range order.Items {
+		receiptItems = append(receiptItems, email.ReceiptPDFItem{
+			TicketTypeName:  item.TicketTypeName,
+			EventTitle:      item.EventTitle,
+			Quantity:        item.Quantity,
+			UnitPrice:       item.UnitPrice,
+			Currency:        item.Currency,
+			SessionStartsAt: item.SessionStartsAt,
+			SessionEndsAt:   item.SessionEndsAt,
+		})
+	}
+
+	receiptData, err := email.BuildReceiptPDF(email.ReceiptPDFInput{
+		OrderNumber:   order.OrderNumber,
+		Status:        order.Status,
+		CustomerName:  order.CustomerName,
+		CustomerEmail: order.CustomerEmail,
+		Currency:      order.Currency,
+		Subtotal:      order.Subtotal,
+		CreatedAt:     order.CreatedAt,
+		UpdatedAt:     order.UpdatedAt,
+		PaidAt:        order.PaidAt,
+		Items:         receiptItems,
+	})
+	if err != nil {
+		return err
+	}
+
+	attachment := &email.EmailAttachment{
+		Filename:    fmt.Sprintf("receipt-%s.pdf", strings.TrimSpace(order.OrderNumber)),
+		ContentType: "application/pdf",
+		Data:        receiptData,
+	}
+
+	if err := s.mailer.SendTicketsIssued(order.CustomerEmail, order.CustomerName, order.OrderNumber, viewURL, items, attachment); err != nil {
 		return err
 	}
 

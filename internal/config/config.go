@@ -9,23 +9,31 @@ import (
 )
 
 type Config struct {
-	AppEnv           string
-	HTTPPort         string
-	WebBaseURL       string
-	DatabaseURL      string
-	JWTSecret        string
-	JWTIssuer        string
-	JWTTTL           time.Duration
-	RefreshTokenTTL  time.Duration
-	RegisterOTPTTL   time.Duration
-	MailjetAPIKey    string
-	MailjetSecretKey string
-	MailjetFromEmail string
-	MailjetFromName  string
-	StripeSecretKey  string
-	StripeWebhookKey string
-	StripeSuccessURL string
-	StripeCancelURL  string
+	AppEnv              string
+	HTTPPort            string
+	WebBaseURL          string
+	CORSAllowedOrigins  []string
+	DatabaseURL         string
+	JWTSecret           string
+	JWTIssuer           string
+	JWTTTL              time.Duration
+	RefreshTokenTTL     time.Duration
+	RefreshCookieName   string
+	RefreshCookieDomain string
+	RefreshCookieSecure bool
+	RegisterOTPTTL      time.Duration
+	MailjetAPIKey       string
+	MailjetSecretKey    string
+	MailjetFromEmail    string
+	MailjetFromName     string
+	StripeSecretKey     string
+	StripeWebhookKey    string
+	StripeSuccessURL    string
+	StripeCancelURL     string
+	GoogleClientIDs     []string
+	FirebaseProjectID   string
+	FirebaseCredentialsFile string
+	FirebaseCredentialsJSON string
 }
 
 func Load() (Config, error) {
@@ -45,25 +53,45 @@ func Load() (Config, error) {
 	}
 
 	cfg := Config{
-		AppEnv:           getEnv("APP_ENV", "development"),
-		HTTPPort:         getEnv("HTTP_PORT", "8080"),
-		WebBaseURL:       getEnv("WEB_BASE_URL", "http://localhost:3000"),
-		DatabaseURL:      strings.TrimSpace(os.Getenv("DATABASE_URL")),
-		JWTSecret:        strings.TrimSpace(os.Getenv("JWT_SECRET")),
-		JWTIssuer:        getEnv("JWT_ISSUER", "eventy-api"),
-		JWTTTL:           time.Duration(ttlMinutes) * time.Minute,
-		RefreshTokenTTL:  time.Duration(refreshTokenTTLHours) * time.Hour,
-		RegisterOTPTTL:   time.Duration(registerOTPTTLMinutes) * time.Minute,
-		MailjetAPIKey:    strings.TrimSpace(os.Getenv("MAILJET_API_KEY")),
-		MailjetSecretKey: strings.TrimSpace(os.Getenv("MAILJET_SECRET_KEY")),
-		MailjetFromEmail: strings.TrimSpace(os.Getenv("MAILJET_FROM_EMAIL")),
-		MailjetFromName:  getEnv("MAILJET_FROM_NAME", "Eventy"),
-		StripeSecretKey:  strings.TrimSpace(os.Getenv("STRIPE_SECRET_KEY")),
-		StripeWebhookKey: strings.TrimSpace(os.Getenv("STRIPE_WEBHOOK_SECRET")),
+		AppEnv:              getEnv("APP_ENV", "development"),
+		HTTPPort:            getEnv("HTTP_PORT", "8080"),
+		WebBaseURL:          getEnv("WEB_BASE_URL", "http://localhost:3000"),
+		DatabaseURL:         strings.TrimSpace(os.Getenv("DATABASE_URL")),
+		JWTSecret:           strings.TrimSpace(os.Getenv("JWT_SECRET")),
+		JWTIssuer:           getEnv("JWT_ISSUER", "eventy-api"),
+		JWTTTL:              time.Duration(ttlMinutes) * time.Minute,
+		RefreshTokenTTL:     time.Duration(refreshTokenTTLHours) * time.Hour,
+		RefreshCookieName:   getEnv("REFRESH_COOKIE_NAME", "eventy_refresh_token"),
+		RefreshCookieDomain: strings.TrimSpace(os.Getenv("REFRESH_COOKIE_DOMAIN")),
+		RegisterOTPTTL:      time.Duration(registerOTPTTLMinutes) * time.Minute,
+		MailjetAPIKey:       strings.TrimSpace(os.Getenv("MAILJET_API_KEY")),
+		MailjetSecretKey:    strings.TrimSpace(os.Getenv("MAILJET_SECRET_KEY")),
+		MailjetFromEmail:    strings.TrimSpace(os.Getenv("MAILJET_FROM_EMAIL")),
+		MailjetFromName:     getEnv("MAILJET_FROM_NAME", "Eventy"),
+		StripeSecretKey:     strings.TrimSpace(os.Getenv("STRIPE_SECRET_KEY")),
+		StripeWebhookKey:    strings.TrimSpace(os.Getenv("STRIPE_WEBHOOK_SECRET")),
+		GoogleClientIDs:     parseListWithFallback(os.Getenv("GOOGLE_CLIENT_IDS"), nil),
+		FirebaseProjectID:   strings.TrimSpace(os.Getenv("FIREBASE_PROJECT_ID")),
+		FirebaseCredentialsFile: strings.TrimSpace(os.Getenv("FIREBASE_CREDENTIALS_FILE")),
+		FirebaseCredentialsJSON: strings.TrimSpace(os.Getenv("FIREBASE_CREDENTIALS_JSON")),
 	}
+
+	cookieSecureFallback := cfg.AppEnv == "production"
+	refreshCookieSecure, err := parseBoolWithFallback(os.Getenv("REFRESH_COOKIE_SECURE"), cookieSecureFallback)
+	if err != nil {
+		return Config{}, errors.New("REFRESH_COOKIE_SECURE must be a valid boolean")
+	}
+	cfg.RefreshCookieSecure = refreshCookieSecure
 
 	cfg.StripeSuccessURL = getEnv("STRIPE_CHECKOUT_SUCCESS_URL", cfg.WebBaseURL+"/checkout/complete?session_id={CHECKOUT_SESSION_ID}")
 	cfg.StripeCancelURL = getEnv("STRIPE_CHECKOUT_CANCEL_URL", cfg.WebBaseURL+"/checkout?cancelled=1")
+	cfg.CORSAllowedOrigins = parseListWithFallback(os.Getenv("CORS_ALLOWED_ORIGINS"), []string{
+		cfg.WebBaseURL,
+		"http://localhost:3000",
+		"http://127.0.0.1:3000",
+		"http://localhost:5173",
+		"http://127.0.0.1:5173",
+	})
 
 	if cfg.DatabaseURL == "" {
 		return Config{}, errors.New("DATABASE_URL is required")
@@ -99,4 +127,47 @@ func getEnv(key string, fallback string) string {
 
 func parseInt(value string) (int, error) {
 	return strconv.Atoi(strings.TrimSpace(value))
+}
+
+func parseBoolWithFallback(value string, fallback bool) (bool, error) {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return fallback, nil
+	}
+
+	parsed, err := strconv.ParseBool(trimmed)
+	if err != nil {
+		return false, err
+	}
+
+	return parsed, nil
+}
+
+func parseListWithFallback(value string, fallback []string) []string {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return fallback
+	}
+
+	parts := strings.Split(trimmed, ",")
+	result := make([]string, 0, len(parts))
+	seen := make(map[string]struct{}, len(parts))
+	for _, part := range parts {
+		item := strings.TrimSpace(part)
+		if item == "" {
+			continue
+		}
+		if _, exists := seen[item]; exists {
+			continue
+		}
+
+		result = append(result, item)
+		seen[item] = struct{}{}
+	}
+
+	if len(result) == 0 {
+		return fallback
+	}
+
+	return result
 }

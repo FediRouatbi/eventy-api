@@ -1,6 +1,7 @@
 package email
 
 import (
+	"encoding/base64"
 	"fmt"
 	"html"
 	"strings"
@@ -22,6 +23,12 @@ type TicketIssuedItem struct {
 	TicketTypeName  string
 	SessionStartsAt time.Time
 	SessionEndsAt   time.Time
+}
+
+type EmailAttachment struct {
+	Filename    string
+	ContentType string
+	Data        []byte
 }
 
 func NewMailjetMailer(apiKey string, secretKey string, fromEmail string, fromName string) *MailjetMailer {
@@ -80,7 +87,7 @@ func (m *MailjetMailer) SendPasswordResetOTP(toEmail string, otpCode string) err
 	return err
 }
 
-func (m *MailjetMailer) SendTicketsIssued(toEmail string, toName string, orderNumber string, viewTicketsURL string, tickets []TicketIssuedItem) error {
+func (m *MailjetMailer) SendTicketsIssued(toEmail string, toName string, orderNumber string, viewTicketsURL string, tickets []TicketIssuedItem, attachment *EmailAttachment) error {
 	toEmail = strings.TrimSpace(toEmail)
 	toName = strings.TrimSpace(toName)
 	orderNumber = strings.TrimSpace(orderNumber)
@@ -110,24 +117,45 @@ func (m *MailjetMailer) SendTicketsIssued(toEmail string, toName string, orderNu
 		textLines = append(textLines, fmt.Sprintf("View your tickets: %s", viewTicketsURL))
 	}
 
-	messages := mailjet.MessagesV31{
-		Info: []mailjet.InfoMessagesV31{
+	info := mailjet.InfoMessagesV31{
+		From: &mailjet.RecipientV31{
+			Email: m.fromEmail,
+			Name:  m.fromName,
+		},
+		To: &mailjet.RecipientsV31{
 			{
-				From: &mailjet.RecipientV31{
-					Email: m.fromEmail,
-					Name:  m.fromName,
-				},
-				To: &mailjet.RecipientsV31{
-					{
-						Email: toEmail,
-						Name:  toName,
-					},
-				},
-				Subject:  subject,
-				TextPart: strings.Join(textLines, "\n"),
-				HTMLPart: buildTicketsIssuedEmailHTML(toEmail, orderNumber, viewTicketsURL, tickets),
+				Email: toEmail,
+				Name:  toName,
 			},
 		},
+		Subject:  subject,
+		TextPart: strings.Join(textLines, "\n"),
+		HTMLPart: buildTicketsIssuedEmailHTML(toEmail, orderNumber, viewTicketsURL, tickets),
+	}
+
+	if attachment != nil && len(attachment.Data) > 0 {
+		filename := strings.TrimSpace(attachment.Filename)
+		if filename == "" {
+			filename = "eventy-receipt.pdf"
+		}
+
+		contentType := strings.TrimSpace(attachment.ContentType)
+		if contentType == "" {
+			contentType = "application/pdf"
+		}
+
+		attachments := mailjet.AttachmentsV31{
+			{
+				ContentType:   contentType,
+				Base64Content: base64.StdEncoding.EncodeToString(attachment.Data),
+				Filename:      filename,
+			},
+		}
+		info.Attachments = &attachments
+	}
+
+	messages := mailjet.MessagesV31{
+		Info: []mailjet.InfoMessagesV31{info},
 	}
 
 	_, err := m.client.SendMailV31(&messages)

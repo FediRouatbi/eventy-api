@@ -17,13 +17,13 @@ import (
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 )
 
-func New(adminsHandler *admins.Handler, authHandler *auth.Handler, categoriesHandler *categories.Handler, eventsHandler *events.Handler, ticketsHandler *tickets.Handler, usersHandler *users.Handler, authMiddleware *middleware.AuthMiddleware) http.Handler {
+func New(adminsHandler *admins.Handler, authHandler *auth.Handler, categoriesHandler *categories.Handler, eventsHandler *events.Handler, ticketsHandler *tickets.Handler, usersHandler *users.Handler, authMiddleware *middleware.AuthMiddleware, corsMiddleware func(http.Handler) http.Handler) http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(chimiddleware.RequestID)
 	r.Use(chimiddleware.RealIP)
 	r.Use(chimiddleware.Logger)
-	r.Use(middleware.CORS)
+	r.Use(corsMiddleware)
 	r.Use(middleware.Recoverer)
 
 	r.Get("/docs", docs.DocsHandler())
@@ -75,6 +75,7 @@ func New(adminsHandler *admins.Handler, authHandler *auth.Handler, categoriesHan
 		r.Route("/admins", func(r chi.Router) {
 			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin, roles.OrganizerAdmin)).Get("/overview", adminsHandler.GetOverview)
 			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin, roles.OrganizerAdmin)).Get("/payments", adminsHandler.GetPayments)
+			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin, roles.OrganizerAdmin)).Get("/payments/export", adminsHandler.ExportPaymentsCSV)
 			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin)).Get("/organizers", adminsHandler.ListOrganizers)
 			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin)).Post("/organizers", adminsHandler.CreateOrganizerAdmin)
 			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin)).Get("/organizers/{organizerID}", adminsHandler.GetOrganizer)

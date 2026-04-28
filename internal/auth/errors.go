@@ -9,6 +9,7 @@ var (
 	ErrInvalidOTP                 = errors.New("otp must be a 4-digit code")
 	ErrEmailAlreadyExists         = errors.New("email is already in use")
 	ErrInvalidCredentials         = errors.New("invalid email or password")
+	ErrInvalidGoogleToken         = errors.New("invalid google token")
 	ErrPendingOTPNotFound         = errors.New("no pending registration found for this email")
 	ErrOTPExpired                 = errors.New("otp has expired")
 	ErrOTPDoesNotMatch            = errors.New("invalid otp")

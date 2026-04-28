@@ -118,6 +118,84 @@
         }
       }
     },
+    "/v1/admins/payments/export": {
+      "get": {
+        "tags": ["Admins"],
+        "summary": "Export admin payments CSV",
+        "description": "Exports payment records as CSV for accounting, scoped by admin role and optional organizer/date filters.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "description": "Start date in YYYY-MM-DD format (default: 29 days before today).",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "description": "End date in YYYY-MM-DD format (default: today).",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "organizer_id",
+            "in": "query",
+            "required": false,
+            "description": "Optional organizer filter for super admins. Organizer admins are always scoped to their organizer.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "timezone",
+            "in": "query",
+            "required": false,
+            "description": "IANA timezone label used in the exported filename (example: Africa/Lagos). Default: UTC.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV export",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
     "/v1/admins/organizers": {
       "get": {
         "tags": ["Admins"],
@@ -1007,6 +1085,304 @@
         }
       }
     },
+    "/v1/public/reservations": {
+      "post": {
+        "tags": ["Orders"],
+        "summary": "Create or update ticket reservation",
+        "description": "Creates a new reservation or updates an existing reservation when reservation_id and reservation_token are provided.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertTicketReservationInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reservation upserted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketReservation"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/public/reservations/{reservationID}": {
+      "get": {
+        "tags": ["Orders"],
+        "summary": "Get ticket reservation",
+        "parameters": [
+          {
+            "name": "reservationID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reservation details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketReservation"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Orders"],
+        "summary": "Delete ticket reservation",
+        "parameters": [
+          {
+            "name": "reservationID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Reservation deleted"
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/public/checkout-orders": {
+      "post": {
+        "tags": ["Orders"],
+        "summary": "Create checkout order",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCheckoutOrderInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Checkout order created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckoutOrder"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/public/checkout-orders/{orderID}": {
+      "get": {
+        "tags": ["Orders"],
+        "summary": "Get checkout order",
+        "parameters": [
+          {
+            "name": "orderID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Checkout order details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckoutOrder"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/public/checkout-orders/{orderID}/stripe-session": {
+      "post": {
+        "tags": ["Orders"],
+        "summary": "Create Stripe checkout session",
+        "parameters": [
+          {
+            "name": "orderID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateStripeCheckoutSessionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Stripe checkout session created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StripeCheckoutSessionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/public/stripe-sessions/{stripeSessionID}/checkout-order": {
+      "get": {
+        "tags": ["Orders"],
+        "summary": "Get checkout order by Stripe session",
+        "parameters": [
+          {
+            "name": "stripeSessionID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Checkout order summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckoutOrderSummary"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
     "/v1/events": {
       "get": {
         "tags": ["Events"],
@@ -1879,6 +2255,14 @@
         "responses": {
           "200": {
             "description": "Authenticated successfully",
+            "headers": {
+              "Set-Cookie": {
+                "description": "HttpOnly refresh token cookie.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -1903,9 +2287,9 @@
       "post": {
         "tags": ["Auth"],
         "summary": "Refresh session",
-        "description": "Rotates the refresh token and returns a new access token plus refresh token.",
+        "description": "Rotates the refresh token and returns a new access token plus refresh token. The refresh token can be sent in request body or HttpOnly cookie.",
         "requestBody": {
-          "required": true,
+          "required": false,
           "content": {
             "application/json": {
               "schema": {
@@ -1917,6 +2301,14 @@
         "responses": {
           "200": {
             "description": "Session refreshed successfully",
+            "headers": {
+              "Set-Cookie": {
+                "description": "HttpOnly refresh token cookie.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -2057,14 +2449,14 @@
       "post": {
         "tags": ["Auth"],
         "summary": "Logout user",
-        "description": "Revokes the current refresh session.",
+        "description": "Revokes the current refresh session for the authenticated user. The refresh token can be sent in request body or HttpOnly cookie.",
         "security": [
           {
             "bearerAuth": []
           }
         ],
         "requestBody": {
-          "required": true,
+          "required": false,
           "content": {
             "application/json": {
               "schema": {
@@ -2993,7 +3385,7 @@
       },
       "RefreshTokenInput": {
         "type": "object",
-        "required": ["refresh_token"],
+        "description": "Refresh token payload. Optional when refresh token is supplied by HttpOnly cookie.",
         "properties": {
           "refresh_token": {
             "type": "string"
@@ -3002,7 +3394,7 @@
       },
       "LogoutInput": {
         "type": "object",
-        "required": ["refresh_token"],
+        "description": "Logout payload. Optional when refresh token is supplied by HttpOnly cookie.",
         "properties": {
           "refresh_token": {
             "type": "string"
@@ -3987,6 +4379,45 @@
           "session_ends_at": { "type": "string", "format": "date-time" }
         }
       },
+      "CheckoutOrder": {
+        "type": "object",
+        "required": [
+          "id",
+          "token",
+          "reservation_id",
+          "order_number",
+          "status",
+          "customer_name",
+          "customer_email",
+          "currency",
+          "subtotal",
+          "expires_at",
+          "created_at",
+          "updated_at",
+          "items"
+        ],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "token": { "type": "string" },
+          "reservation_id": { "type": "string", "format": "uuid" },
+          "order_number": { "type": "string" },
+          "status": { "type": "string" },
+          "customer_name": { "type": "string" },
+          "customer_email": { "type": "string", "format": "email" },
+          "currency": { "type": "string" },
+          "subtotal": { "type": "number" },
+          "expires_at": { "type": "string", "format": "date-time" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" },
+          "stripe_checkout_session_id": { "type": "string" },
+          "paid_at": { "type": "string", "format": "date-time", "nullable": true },
+          "tickets_emailed_at": { "type": "string", "format": "date-time", "nullable": true },
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CheckoutOrderItem" }
+          }
+        }
+      },
       "CheckoutOrderSummary": {
         "type": "object",
         "required": [
@@ -4019,6 +4450,102 @@
           "items": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/CheckoutOrderItem" }
+          }
+        }
+      },
+      "CreateCheckoutOrderInput": {
+        "type": "object",
+        "required": ["reservation_id", "reservation_token", "customer_name", "customer_email"],
+        "properties": {
+          "reservation_id": { "type": "string", "format": "uuid" },
+          "reservation_token": { "type": "string" },
+          "customer_name": { "type": "string" },
+          "customer_email": { "type": "string", "format": "email" }
+        }
+      },
+      "CreateStripeCheckoutSessionInput": {
+        "type": "object",
+        "required": ["order_token"],
+        "properties": {
+          "order_token": { "type": "string" }
+        }
+      },
+      "StripeCheckoutSessionResponse": {
+        "type": "object",
+        "required": ["session_id", "checkout_url", "order_id", "order_number", "expires_at"],
+        "properties": {
+          "session_id": { "type": "string" },
+          "checkout_url": { "type": "string" },
+          "order_id": { "type": "string", "format": "uuid" },
+          "order_number": { "type": "string" },
+          "expires_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "UpsertTicketReservationItemInput": {
+        "type": "object",
+        "required": ["ticket_type_id", "quantity"],
+        "properties": {
+          "ticket_type_id": { "type": "string", "format": "uuid" },
+          "quantity": { "type": "integer" }
+        }
+      },
+      "UpsertTicketReservationInput": {
+        "type": "object",
+        "required": ["items"],
+        "properties": {
+          "reservation_id": { "type": "string", "format": "uuid" },
+          "reservation_token": { "type": "string" },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UpsertTicketReservationItemInput"
+            }
+          }
+        }
+      },
+      "TicketReservationItem": {
+        "type": "object",
+        "required": [
+          "ticket_type_id",
+          "ticket_type_name",
+          "quantity",
+          "unit_price",
+          "currency",
+          "max_per_order",
+          "available_quantity",
+          "event_id",
+          "event_title",
+          "session_id",
+          "session_starts_at",
+          "session_ends_at"
+        ],
+        "properties": {
+          "ticket_type_id": { "type": "string", "format": "uuid" },
+          "ticket_type_name": { "type": "string" },
+          "quantity": { "type": "integer" },
+          "unit_price": { "type": "number" },
+          "currency": { "type": "string" },
+          "max_per_order": { "type": "integer" },
+          "available_quantity": { "type": "integer" },
+          "event_id": { "type": "string", "format": "uuid" },
+          "event_title": { "type": "string" },
+          "session_id": { "type": "string", "format": "uuid" },
+          "session_starts_at": { "type": "string", "format": "date-time" },
+          "session_ends_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "TicketReservation": {
+        "type": "object",
+        "required": ["id", "token", "expires_at", "created_at", "updated_at", "items"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "token": { "type": "string" },
+          "expires_at": { "type": "string", "format": "date-time" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" },
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TicketReservationItem" }
           }
         }
       },

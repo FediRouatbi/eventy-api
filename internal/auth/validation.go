@@ -36,6 +36,19 @@ func validateLoginInput(input LoginInput) error {
 	return nil
 }
 
+func validateGoogleLoginInput(input GoogleLoginInput) error {
+	if strings.TrimSpace(input.IDToken) == "" {
+		return ErrInvalidGoogleToken
+	}
+
+	switch strings.TrimSpace(input.Platform) {
+	case "android", "ios", "web":
+		return nil
+	default:
+		return ErrInvalidGoogleToken
+	}
+}
+
 func validateVerifyRegisterOTPInput(input VerifyRegisterOTPInput) error {
 	if !isValidEmail(input.Email) {
 		return ErrInvalidEmail

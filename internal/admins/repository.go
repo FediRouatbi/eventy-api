@@ -779,6 +779,116 @@ LIMIT ?
 	return payments, nil
 }
 
+func (r *Repository) ListPaymentsForExport(ctx context.Context, filters AdminPaymentsExportFilters) ([]AdminPaymentExportRow, error) {
+	scopeFilter := ""
+	args := []any{
+		filters.FromDate.UTC().Format("2006-01-02"),
+		filters.ToDate.UTC().Format("2006-01-02"),
+	}
+
+	if filters.OrganizerID != nil {
+		scopeFilter = `
+  AND EXISTS (
+      SELECT 1
+      FROM checkout_order_items coi_scope
+      JOIN events e_scope ON e_scope.id = coi_scope.event_id
+      WHERE coi_scope.order_id = co.id
+        AND e_scope.organizer_id = ?
+  )`
+		args = append(args, filters.OrganizerID.String())
+	}
+
+	rows, err := r.db.QueryContext(ctx, `
+SELECT
+    co.id,
+    co.order_number,
+    co.status,
+    co.subtotal,
+    co.currency,
+    co.customer_name,
+    co.customer_email,
+    COALESCE(GROUP_CONCAT(DISTINCT coi.event_title ORDER BY coi.event_title SEPARATOR ' | '), '') AS event_titles,
+    MIN(e.organizer_id) AS organizer_id,
+    MIN(o.name) AS organizer_name,
+    co.paid_at,
+    co.created_at,
+    co.updated_at
+FROM checkout_orders co
+LEFT JOIN checkout_order_items coi ON coi.order_id = co.id
+LEFT JOIN events e ON e.id = coi.event_id
+LEFT JOIN organizers o ON o.id = e.organizer_id
+WHERE DATE(COALESCE(co.paid_at, co.created_at)) BETWEEN ? AND ?`+scopeFilter+`
+GROUP BY
+    co.id,
+    co.order_number,
+    co.status,
+    co.subtotal,
+    co.currency,
+    co.customer_name,
+    co.customer_email,
+    co.paid_at,
+    co.created_at,
+    co.updated_at
+ORDER BY DATE(COALESCE(co.paid_at, co.created_at)) DESC, co.created_at DESC, co.order_number ASC
+`, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	items := make([]AdminPaymentExportRow, 0)
+	for rows.Next() {
+		var (
+			item            AdminPaymentExportRow
+			orderIDText     string
+			organizerIDDB   sql.NullString
+			organizerNameDB sql.NullString
+			paidAtDB        sql.NullTime
+		)
+
+		if err := rows.Scan(
+			&orderIDText,
+			&item.OrderNumber,
+			&item.Status,
+			&item.Amount,
+			&item.Currency,
+			&item.CustomerName,
+			&item.CustomerEmail,
+			&item.EventTitles,
+			&organizerIDDB,
+			&organizerNameDB,
+			&paidAtDB,
+			&item.CreatedAt,
+			&item.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+
+		parsedOrderID, err := uuid.Parse(orderIDText)
+		if err != nil {
+			return nil, err
+		}
+		item.OrderID = parsedOrderID
+
+		if organizerIDDB.Valid {
+			parsedOrganizerID, err := uuid.Parse(strings.TrimSpace(organizerIDDB.String))
+			if err == nil {
+				item.OrganizerID = &parsedOrganizerID
+			}
+		}
+		item.OrganizerName = strings.TrimSpace(organizerNameDB.String)
+
+		if paidAtDB.Valid {
+			paidAt := paidAtDB.Time
+			item.PaidAt = &paidAt
+		}
+
+		items = append(items, item)
+	}
+
+	return items, rows.Err()
+}
+
 func (r *Repository) ListOrganizers(ctx context.Context) ([]OrganizerListItem, error) {
 	rows, err := r.db.QueryContext(ctx, `
 SELECT o.id, o.name, o.slug,
