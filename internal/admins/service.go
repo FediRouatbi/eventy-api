@@ -27,7 +27,6 @@ func (s *Service) CreateOrganizerAdmin(ctx context.Context, input CreateOrganize
 	input.OrganizerSlug = strings.TrimSpace(input.OrganizerSlug)
 	input.AdminName = strings.TrimSpace(input.AdminName)
 	input.AdminEmail = strings.TrimSpace(strings.ToLower(input.AdminEmail))
-	input.AdminPassword = strings.TrimSpace(input.AdminPassword)
 
 	if err := validateCreateOrganizerAdminInput(input); err != nil {
 		return CreateOrganizerAdminResult{}, err
@@ -188,7 +187,6 @@ func (s *Service) ListOrganizerAdmins(ctx context.Context, organizerID uuid.UUID
 func (s *Service) AddOrganizerAdmin(ctx context.Context, organizerID uuid.UUID, input AddOrganizerAdminInput) (OrganizerAdmin, error) {
 	input.AdminName = strings.TrimSpace(input.AdminName)
 	input.AdminEmail = strings.TrimSpace(strings.ToLower(input.AdminEmail))
-	input.AdminPassword = strings.TrimSpace(input.AdminPassword)
 
 	if err := validateAddOrganizerAdminInput(input); err != nil {
 		return OrganizerAdmin{}, err
@@ -210,16 +208,6 @@ func (s *Service) UpdateOrganizerAdmin(ctx context.Context, organizerID uuid.UUI
 
 func (s *Service) GetOrganizerAdmin(ctx context.Context, organizerID uuid.UUID, adminID uuid.UUID) (OrganizerAdmin, error) {
 	return s.repository.GetOrganizerAdmin(ctx, organizerID, adminID)
-}
-
-func (s *Service) ResetOrganizerAdminPassword(ctx context.Context, organizerID uuid.UUID, adminID uuid.UUID, input ResetOrganizerAdminPasswordInput) error {
-	input.Password = strings.TrimSpace(input.Password)
-
-	if err := validateResetOrganizerAdminPasswordInput(input); err != nil {
-		return err
-	}
-
-	return s.repository.ResetOrganizerAdminPassword(ctx, organizerID, adminID, input.Password)
 }
 
 func (s *Service) DeleteOrganizerAdmin(ctx context.Context, organizerID uuid.UUID, adminID uuid.UUID) error {

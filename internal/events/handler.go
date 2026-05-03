@@ -333,14 +333,14 @@ func (h *Handler) CreateStripeCheckoutSession(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	session, err := h.service.CreateStripeCheckoutSession(r.Context(), orderID, input.OrderToken)
+	session, err := h.service.CreateStripeCheckoutSession(r.Context(), orderID, input)
 	if err != nil {
 		logger.RequestError(r, "events.create_stripe_checkout_session", err)
 
 		switch {
 		case errors.Is(err, ErrInvalidOrderToken), errors.Is(err, ErrCheckoutOrderNotFound):
 			responses.WriteError(w, http.StatusNotFound, err.Error())
-		case errors.Is(err, ErrUnsupportedCurrency):
+		case errors.Is(err, ErrUnsupportedCurrency), errors.Is(err, ErrInvalidCheckoutRedirectURL):
 			responses.WriteError(w, http.StatusBadRequest, err.Error())
 		case errors.Is(err, ErrStripeNotConfigured):
 			responses.WriteError(w, http.StatusNotImplemented, err.Error())

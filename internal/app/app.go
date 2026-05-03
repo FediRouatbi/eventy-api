@@ -10,9 +10,11 @@ import (
 	"eventy-api/internal/events"
 	httpmiddleware "eventy-api/internal/http/middleware"
 	"eventy-api/internal/http/router"
+	"eventy-api/internal/notifications"
 	pgdb "eventy-api/internal/platform/db"
 	"eventy-api/internal/platform/db/sqlc"
 	"eventy-api/internal/platform/email"
+	eventyfirebase "eventy-api/internal/platform/firebase"
 	"eventy-api/internal/platform/jwt"
 	"eventy-api/internal/tickets"
 	"eventy-api/internal/users"
@@ -35,6 +37,15 @@ func New(cfg config.Config) (*App, error) {
 
 	queries := sqlc.New(postgresDB)
 	tokenManager := jwt.NewManager(cfg.JWTSecret, cfg.JWTIssuer, cfg.JWTTTL)
+	firebaseServices, err := eventyfirebase.NewServices(context.Background(), eventyfirebase.Config{
+		ProjectID:       cfg.FirebaseProjectID,
+		CredentialsFile: cfg.FirebaseCredentialsFile,
+		CredentialsJSON: cfg.FirebaseCredentialsJSON,
+		GoogleClientIDs: cfg.GoogleClientIDs,
+	})
+	if err != nil {
+		return nil, err
+	}
 	registrationMailer := email.NewMailjetMailer(
 		cfg.MailjetAPIKey,
 		cfg.MailjetSecretKey,
@@ -42,7 +53,7 @@ func New(cfg config.Config) (*App, error) {
 		cfg.MailjetFromName,
 	)
 	authRepository := auth.NewRepository(queries)
-	authService := auth.NewService(authRepository, tokenManager, registrationMailer, cfg.RegisterOTPTTL, cfg.RefreshTokenTTL)
+	authService := auth.NewService(authRepository, tokenManager, firebaseServices.FirebaseVerifier, cfg.RefreshTokenTTL)
 	authHandler := auth.NewHandler(authService, auth.CookieSettings{
 		RefreshTokenName: cfg.RefreshCookieName,
 		Domain:           cfg.RefreshCookieDomain,
@@ -64,8 +75,12 @@ func New(cfg config.Config) (*App, error) {
 	categoriesService := categories.NewService(categoriesRepository, eventsRepository)
 	categoriesHandler := categories.NewHandler(categoriesService)
 	usersRepository := users.NewRepository(queries)
-	usersService := users.NewService(usersRepository)
+	usersService := users.NewService(usersRepository, firebaseServices.FirebaseVerifier)
 	usersHandler := users.NewHandler(usersService)
+	notificationsRepository := notifications.NewRepository(postgresDB)
+	notificationsService := notifications.NewService(notificationsRepository)
+	notificationsHandler := notifications.NewHandler(notificationsService)
+	_ = notifications.NewSender(firebaseServices.Messaging)
 	ticketsService := tickets.NewService(ticketsRepository)
 	ticketsHandler := tickets.NewHandler(ticketsService)
 	authMiddleware := httpmiddleware.NewAuthMiddleware(tokenManager)
@@ -75,7 +90,7 @@ func New(cfg config.Config) (*App, error) {
 	startMaintenance(ctx, eventsRepository)
 
 	return &App{
-		Router: router.New(adminsHandler, authHandler, categoriesHandler, eventsHandler, ticketsHandler, usersHandler, authMiddleware, corsMiddleware),
+		Router: router.New(adminsHandler, authHandler, categoriesHandler, eventsHandler, notificationsHandler, ticketsHandler, usersHandler, authMiddleware, corsMiddleware),
 		db:     postgresDB,
 		stop:   stop,
 	}, nil

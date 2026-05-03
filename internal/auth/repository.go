@@ -21,13 +21,14 @@ func NewRepository(queries *sqlc.Queries) *Repository {
 	return &Repository{queries: queries}
 }
 
-func (r *Repository) CreateUser(ctx context.Context, input RegisterInput, passwordHash string) (User, error) {
+func (r *Repository) CreateUser(ctx context.Context, input CreateUserInput, passwordHash string) (User, error) {
 	userID := uuid.New()
 
 	dbUser, err := r.queries.CreateUser(ctx, sqlc.CreateUserParams{
 		ID:           userID.String(),
 		Name:         strings.TrimSpace(input.Name),
 		Email:        normalizeEmail(input.Email),
+		FirebaseUID:  sql.NullString{String: strings.TrimSpace(input.FirebaseUID), Valid: strings.TrimSpace(input.FirebaseUID) != ""},
 		PasswordHash: passwordHash,
 		Role:         roles.User,
 		OrganizerID:  sql.NullString{},
@@ -83,75 +84,13 @@ func (r *Repository) UserEmailExists(ctx context.Context, email string) (bool, e
 	return r.queries.CheckUserEmailExists(ctx, normalizeEmail(email))
 }
 
-func (r *Repository) SavePendingRegistration(ctx context.Context, input RegisterInput, passwordHash string, otpCode string, expiresAt time.Time) error {
-	return r.queries.UpsertPendingRegistration(ctx, sqlc.UpsertPendingRegistrationParams{
-		Name:         strings.TrimSpace(input.Name),
-		Email:        normalizeEmail(input.Email),
-		PasswordHash: passwordHash,
-		OTPCode:      otpCode,
-		ExpiresAt:    expiresAt,
-	})
-}
-
-func (r *Repository) UpdatePendingRegistrationOTP(ctx context.Context, pending sqlc.PendingRegistration, otpCode string, expiresAt time.Time) error {
-	return r.queries.UpsertPendingRegistration(ctx, sqlc.UpsertPendingRegistrationParams{
-		Name:         strings.TrimSpace(pending.Name),
-		Email:        normalizeEmail(pending.Email),
-		PasswordHash: pending.PasswordHash,
-		OTPCode:      otpCode,
-		ExpiresAt:    expiresAt,
-	})
-}
-
-func (r *Repository) GetPendingRegistrationByEmail(ctx context.Context, email string) (sqlc.PendingRegistration, error) {
-	pending, err := r.queries.GetPendingRegistrationByEmail(ctx, normalizeEmail(email))
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return sqlc.PendingRegistration{}, ErrPendingOTPNotFound
-		}
-
-		return sqlc.PendingRegistration{}, err
+func (r *Repository) UpdateUserFirebaseUID(ctx context.Context, userID uuid.UUID, firebaseUID string) (User, error) {
+	if err := r.queries.UpdateUserFirebaseUID(ctx, strings.TrimSpace(firebaseUID), userID.String()); err != nil {
+		return User{}, err
 	}
 
-	return pending, nil
-}
-
-func (r *Repository) DeletePendingRegistrationByEmail(ctx context.Context, email string) error {
-	return r.queries.DeletePendingRegistrationByEmail(ctx, normalizeEmail(email))
-}
-
-func (r *Repository) SavePasswordResetToken(ctx context.Context, user User, token string, expiresAt time.Time) error {
-	return r.queries.UpsertPasswordResetToken(ctx, sqlc.UpsertPasswordResetTokenParams{
-		UserID:    user.ID.String(),
-		Email:     normalizeEmail(user.Email),
-		Token:     token,
-		ExpiresAt: expiresAt,
-	})
-}
-
-func (r *Repository) GetPasswordResetTokenByEmail(ctx context.Context, email string) (sqlc.PasswordResetToken, error) {
-	resetToken, err := r.queries.GetPasswordResetTokenByEmail(ctx, normalizeEmail(email))
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return sqlc.PasswordResetToken{}, ErrPasswordResetNotFound
-		}
-
-		return sqlc.PasswordResetToken{}, err
-	}
-
-	return resetToken, nil
-}
-
-func (r *Repository) DeletePasswordResetTokenByEmail(ctx context.Context, email string) error {
-	return r.queries.DeletePasswordResetTokenByEmail(ctx, normalizeEmail(email))
-}
-
-func (r *Repository) UpdateUserPasswordByEmail(ctx context.Context, email string, passwordHash string) error {
-	return r.queries.UpdateUserPasswordByEmail(ctx, passwordHash, normalizeEmail(email))
-}
-
-func (r *Repository) UpdateUserPasswordByID(ctx context.Context, userID uuid.UUID, passwordHash string) error {
-	return r.queries.UpdateUserPasswordByID(ctx, passwordHash, userID.String())
+	user, _, err := r.GetUserByID(ctx, userID)
+	return user, err
 }
 
 func (r *Repository) CreateSession(ctx context.Context, user User, refreshTokenHash string, expiresAt time.Time) error {
@@ -208,9 +147,19 @@ func mapUser(dbUser sqlc.User) (User, error) {
 		ID:          userID,
 		Name:        dbUser.Name,
 		Email:       dbUser.Email,
+		FirebaseUID: nullableStringPtr(dbUser.FirebaseUID),
 		Role:        dbUser.Role,
 		OrganizerID: organizerID,
 		CreatedAt:   dbUser.CreatedAt,
 		UpdatedAt:   dbUser.UpdatedAt,
 	}, nil
+}
+
+func nullableStringPtr(value sql.NullString) *string {
+	if !value.Valid || strings.TrimSpace(value.String) == "" {
+		return nil
+	}
+
+	result := value.String
+	return &result
 }

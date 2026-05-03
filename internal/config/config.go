@@ -9,29 +9,28 @@ import (
 )
 
 type Config struct {
-	AppEnv              string
-	HTTPPort            string
-	WebBaseURL          string
-	CORSAllowedOrigins  []string
-	DatabaseURL         string
-	JWTSecret           string
-	JWTIssuer           string
-	JWTTTL              time.Duration
-	RefreshTokenTTL     time.Duration
-	RefreshCookieName   string
-	RefreshCookieDomain string
-	RefreshCookieSecure bool
-	RegisterOTPTTL      time.Duration
-	MailjetAPIKey       string
-	MailjetSecretKey    string
-	MailjetFromEmail    string
-	MailjetFromName     string
-	StripeSecretKey     string
-	StripeWebhookKey    string
-	StripeSuccessURL    string
-	StripeCancelURL     string
-	GoogleClientIDs     []string
-	FirebaseProjectID   string
+	AppEnv                  string
+	HTTPPort                string
+	WebBaseURL              string
+	CORSAllowedOrigins      []string
+	DatabaseURL             string
+	JWTSecret               string
+	JWTIssuer               string
+	JWTTTL                  time.Duration
+	RefreshTokenTTL         time.Duration
+	RefreshCookieName       string
+	RefreshCookieDomain     string
+	RefreshCookieSecure     bool
+	MailjetAPIKey           string
+	MailjetSecretKey        string
+	MailjetFromEmail        string
+	MailjetFromName         string
+	StripeSecretKey         string
+	StripeWebhookKey        string
+	StripeSuccessURL        string
+	StripeCancelURL         string
+	GoogleClientIDs         []string
+	FirebaseProjectID       string
 	FirebaseCredentialsFile string
 	FirebaseCredentialsJSON string
 }
@@ -47,31 +46,25 @@ func Load() (Config, error) {
 		return Config{}, errors.New("REFRESH_TOKEN_TTL_HOURS must be a valid integer")
 	}
 
-	registerOTPTTLMinutes, err := parseInt(getEnv("REGISTER_OTP_TTL_MINUTES", "10"))
-	if err != nil {
-		return Config{}, errors.New("REGISTER_OTP_TTL_MINUTES must be a valid integer")
-	}
-
 	cfg := Config{
-		AppEnv:              getEnv("APP_ENV", "development"),
-		HTTPPort:            getEnv("HTTP_PORT", "8080"),
-		WebBaseURL:          getEnv("WEB_BASE_URL", "http://localhost:3000"),
-		DatabaseURL:         strings.TrimSpace(os.Getenv("DATABASE_URL")),
-		JWTSecret:           strings.TrimSpace(os.Getenv("JWT_SECRET")),
-		JWTIssuer:           getEnv("JWT_ISSUER", "eventy-api"),
-		JWTTTL:              time.Duration(ttlMinutes) * time.Minute,
-		RefreshTokenTTL:     time.Duration(refreshTokenTTLHours) * time.Hour,
-		RefreshCookieName:   getEnv("REFRESH_COOKIE_NAME", "eventy_refresh_token"),
-		RefreshCookieDomain: strings.TrimSpace(os.Getenv("REFRESH_COOKIE_DOMAIN")),
-		RegisterOTPTTL:      time.Duration(registerOTPTTLMinutes) * time.Minute,
-		MailjetAPIKey:       strings.TrimSpace(os.Getenv("MAILJET_API_KEY")),
-		MailjetSecretKey:    strings.TrimSpace(os.Getenv("MAILJET_SECRET_KEY")),
-		MailjetFromEmail:    strings.TrimSpace(os.Getenv("MAILJET_FROM_EMAIL")),
-		MailjetFromName:     getEnv("MAILJET_FROM_NAME", "Eventy"),
-		StripeSecretKey:     strings.TrimSpace(os.Getenv("STRIPE_SECRET_KEY")),
-		StripeWebhookKey:    strings.TrimSpace(os.Getenv("STRIPE_WEBHOOK_SECRET")),
-		GoogleClientIDs:     parseListWithFallback(os.Getenv("GOOGLE_CLIENT_IDS"), nil),
-		FirebaseProjectID:   strings.TrimSpace(os.Getenv("FIREBASE_PROJECT_ID")),
+		AppEnv:                  getEnv("APP_ENV", "development"),
+		HTTPPort:                getEnv("HTTP_PORT", "8080"),
+		WebBaseURL:              getEnv("WEB_BASE_URL", "http://localhost:3000"),
+		DatabaseURL:             strings.TrimSpace(os.Getenv("DATABASE_URL")),
+		JWTSecret:               strings.TrimSpace(os.Getenv("JWT_SECRET")),
+		JWTIssuer:               getEnv("JWT_ISSUER", "eventy-api"),
+		JWTTTL:                  time.Duration(ttlMinutes) * time.Minute,
+		RefreshTokenTTL:         time.Duration(refreshTokenTTLHours) * time.Hour,
+		RefreshCookieName:       getEnv("REFRESH_COOKIE_NAME", "eventy_refresh_token"),
+		RefreshCookieDomain:     strings.TrimSpace(os.Getenv("REFRESH_COOKIE_DOMAIN")),
+		MailjetAPIKey:           strings.TrimSpace(os.Getenv("MAILJET_API_KEY")),
+		MailjetSecretKey:        strings.TrimSpace(os.Getenv("MAILJET_SECRET_KEY")),
+		MailjetFromEmail:        strings.TrimSpace(os.Getenv("MAILJET_FROM_EMAIL")),
+		MailjetFromName:         getEnv("MAILJET_FROM_NAME", "Eventy"),
+		StripeSecretKey:         strings.TrimSpace(os.Getenv("STRIPE_SECRET_KEY")),
+		StripeWebhookKey:        strings.TrimSpace(os.Getenv("STRIPE_WEBHOOK_SECRET")),
+		GoogleClientIDs:         parseListWithFallback(os.Getenv("GOOGLE_CLIENT_IDS"), nil),
+		FirebaseProjectID:       strings.TrimSpace(os.Getenv("FIREBASE_PROJECT_ID")),
 		FirebaseCredentialsFile: strings.TrimSpace(os.Getenv("FIREBASE_CREDENTIALS_FILE")),
 		FirebaseCredentialsJSON: strings.TrimSpace(os.Getenv("FIREBASE_CREDENTIALS_JSON")),
 	}

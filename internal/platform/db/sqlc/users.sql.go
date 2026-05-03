@@ -11,11 +11,13 @@ INSERT INTO users (
     id,
     name,
     email,
+    firebase_uid,
     password_hash,
     role,
     organizer_id
 ) VALUES (
     ?,
+    NULLIF(?, ''),
     ?,
     ?,
     ?,
@@ -25,14 +27,14 @@ INSERT INTO users (
 `
 
 const getUserByEmailQuery = `
-SELECT id, name, email, password_hash, role, organizer_id, created_at, updated_at
+SELECT id, name, email, firebase_uid, password_hash, role, organizer_id, created_at, updated_at
 FROM users
 WHERE email = ?
 LIMIT 1
 `
 
 const getUserByIDQuery = `
-SELECT id, name, email, password_hash, role, organizer_id, created_at, updated_at
+SELECT id, name, email, firebase_uid, password_hash, role, organizer_id, created_at, updated_at
 FROM users
 WHERE id = ?
 LIMIT 1
@@ -47,6 +49,12 @@ const updateUserPasswordByEmailQuery = `
 UPDATE users
 SET password_hash = ?
 WHERE email = ?
+`
+
+const updateUserFirebaseUIDQuery = `
+UPDATE users
+SET firebase_uid = NULLIF(?, '')
+WHERE id = ?
 `
 
 const updateUserPasswordByIDQuery = `
@@ -71,7 +79,7 @@ SELECT EXISTS(
 `
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	_, err := q.db.ExecContext(ctx, createUserQuery, arg.ID, arg.Name, arg.Email, arg.PasswordHash, arg.Role, arg.OrganizerID)
+	_, err := q.db.ExecContext(ctx, createUserQuery, arg.ID, arg.Name, arg.Email, arg.FirebaseUID, arg.PasswordHash, arg.Role, arg.OrganizerID)
 	if err != nil {
 		return User{}, err
 	}
@@ -87,6 +95,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&user.ID,
 		&user.Name,
 		&user.Email,
+		&user.FirebaseUID,
 		&user.PasswordHash,
 		&user.Role,
 		&user.OrganizerID,
@@ -108,6 +117,7 @@ func (q *Queries) GetUserByID(ctx context.Context, id string) (User, error) {
 		&user.ID,
 		&user.Name,
 		&user.Email,
+		&user.FirebaseUID,
 		&user.PasswordHash,
 		&user.Role,
 		&user.OrganizerID,
@@ -137,6 +147,11 @@ func (q *Queries) CheckUserEmailExists(ctx context.Context, email string) (bool,
 
 func (q *Queries) UpdateUserPasswordByEmail(ctx context.Context, passwordHash string, email string) error {
 	_, err := q.db.ExecContext(ctx, updateUserPasswordByEmailQuery, passwordHash, email)
+	return err
+}
+
+func (q *Queries) UpdateUserFirebaseUID(ctx context.Context, firebaseUID string, id string) error {
+	_, err := q.db.ExecContext(ctx, updateUserFirebaseUIDQuery, firebaseUID, id)
 	return err
 }
 

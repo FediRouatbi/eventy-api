@@ -37,7 +37,9 @@
   "paths": {
     "/v1/admins/overview": {
       "get": {
-        "tags": ["Admins"],
+        "tags": [
+          "Admins"
+        ],
         "summary": "Get admin overview",
         "description": "Organizer admins and super admins can fetch overview metrics, recent events, upcoming sessions, and attention items scoped to their access.",
         "security": [
@@ -70,7 +72,9 @@
     },
     "/v1/admins/payments": {
       "get": {
-        "tags": ["Admins"],
+        "tags": [
+          "Admins"
+        ],
         "summary": "Get admin payments",
         "description": "Organizer admins and super admins can fetch payment analytics and latest payment records scoped to their access.",
         "security": [
@@ -120,7 +124,9 @@
     },
     "/v1/admins/payments/export": {
       "get": {
-        "tags": ["Admins"],
+        "tags": [
+          "Admins"
+        ],
         "summary": "Export admin payments CSV",
         "description": "Exports payment records as CSV for accounting, scoped by admin role and optional organizer/date filters.",
         "security": [
@@ -198,7 +204,9 @@
     },
     "/v1/admins/organizers": {
       "get": {
-        "tags": ["Admins"],
+        "tags": [
+          "Admins"
+        ],
         "summary": "List organizers",
         "description": "Super admins can list organizers with the primary linked admin account plus event and session totals for each organizer.",
         "security": [
@@ -232,7 +240,9 @@
         }
       },
       "post": {
-        "tags": ["Admins"],
+        "tags": [
+          "Admins"
+        ],
         "summary": "Create organizer admin",
         "description": "Super admins can create an organizer together with its linked organizer admin account.",
         "security": [
@@ -281,7 +291,9 @@
     },
     "/v1/admins/organizers/{organizerID}": {
       "get": {
-        "tags": ["Admins"],
+        "tags": [
+          "Admins"
+        ],
         "summary": "Get organizer",
         "description": "Super admins can fetch a single organizer with its admin list and organizer-scoped event summaries in one response.",
         "security": [
@@ -329,7 +341,9 @@
         }
       },
       "patch": {
-        "tags": ["Admins"],
+        "tags": [
+          "Admins"
+        ],
         "summary": "Update organizer",
         "description": "Super admins can update an organizer's name and slug.",
         "security": [
@@ -390,7 +404,9 @@
         }
       },
       "delete": {
-        "tags": ["Admins"],
+        "tags": [
+          "Admins"
+        ],
         "summary": "Delete organizer",
         "description": "Super admins can delete an organizer.",
         "security": [
@@ -440,7 +456,9 @@
     },
     "/v1/admins/organizers/{organizerID}/admins": {
       "get": {
-        "tags": ["Admins"],
+        "tags": [
+          "Admins"
+        ],
         "summary": "List organizer admins",
         "description": "Super admins can list every organizer admin attached to a specific organizer.",
         "security": [
@@ -491,7 +509,9 @@
         }
       },
       "post": {
-        "tags": ["Admins"],
+        "tags": [
+          "Admins"
+        ],
         "summary": "Add organizer admin",
         "description": "Super admins can add another organizer admin to an existing organizer.",
         "security": [
@@ -554,7 +574,9 @@
     },
     "/v1/admins/organizers/{organizerID}/admins/{adminID}": {
       "get": {
-        "tags": ["Admins"],
+        "tags": [
+          "Admins"
+        ],
         "summary": "Get organizer admin",
         "description": "Super admins can fetch a single organizer admin attached to a specific organizer.",
         "security": [
@@ -611,7 +633,9 @@
         }
       },
       "patch": {
-        "tags": ["Admins"],
+        "tags": [
+          "Admins"
+        ],
         "summary": "Update organizer admin",
         "description": "Super admins can update an organizer admin's name and email.",
         "security": [
@@ -681,7 +705,9 @@
         }
       },
       "delete": {
-        "tags": ["Admins"],
+        "tags": [
+          "Admins"
+        ],
         "summary": "Delete organizer admin",
         "description": "Super admins can delete an organizer admin as long as the organizer will still have at least one admin account remaining.",
         "security": [
@@ -741,78 +767,11 @@
         }
       }
     },
-    "/v1/admins/organizers/{organizerID}/admins/{adminID}/password": {
-      "patch": {
-        "tags": ["Admins"],
-        "summary": "Reset organizer admin password",
-        "description": "Super admins can set a new password for a specific organizer admin account.",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "organizerID",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "adminID",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ResetOrganizerAdminPasswordInput"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Password updated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MessageResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "401": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "403": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "404": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        }
-      }
-    },
     "/v1/categories": {
       "get": {
-        "tags": ["Categories"],
+        "tags": [
+          "Categories"
+        ],
         "summary": "List categories",
         "responses": {
           "200": {
@@ -834,7 +793,9 @@
         }
       },
       "post": {
-        "tags": ["Categories"],
+        "tags": [
+          "Categories"
+        ],
         "summary": "Create category",
         "security": [
           {
@@ -877,7 +838,9 @@
         }
       },
       "patch": {
-        "tags": ["Categories"],
+        "tags": [
+          "Categories"
+        ],
         "summary": "Update category",
         "description": "Super admins can update a category by ID.",
         "security": [
@@ -938,7 +901,9 @@
         }
       },
       "delete": {
-        "tags": ["Categories"],
+        "tags": [
+          "Categories"
+        ],
         "summary": "Delete category",
         "description": "Super admins can delete a category by ID.",
         "security": [
@@ -988,7 +953,9 @@
     },
     "/v1/public/categories/{categorySlug}": {
       "get": {
-        "tags": ["Categories"],
+        "tags": [
+          "Categories"
+        ],
         "summary": "Get public category by slug",
         "description": "Returns a category by slug for public discovery pages.",
         "parameters": [
@@ -1023,7 +990,9 @@
     },
     "/v1/public/events": {
       "get": {
-        "tags": ["Events"],
+        "tags": [
+          "Events"
+        ],
         "summary": "List public events",
         "description": "Returns published events enriched for the public discovery experience, including organizer and category display data, the next upcoming session, and derived ticket summary fields.",
         "responses": {
@@ -1048,7 +1017,9 @@
     },
     "/v1/public/events/{eventID}": {
       "get": {
-        "tags": ["Events"],
+        "tags": [
+          "Events"
+        ],
         "summary": "Get public event",
         "description": "Returns a published event with public-facing organizer, category, session, and ticket information.",
         "parameters": [
@@ -1087,7 +1058,9 @@
     },
     "/v1/public/reservations": {
       "post": {
-        "tags": ["Orders"],
+        "tags": [
+          "Orders"
+        ],
         "summary": "Create or update ticket reservation",
         "description": "Creates a new reservation or updates an existing reservation when reservation_id and reservation_token are provided.",
         "requestBody": {
@@ -1128,7 +1101,9 @@
     },
     "/v1/public/reservations/{reservationID}": {
       "get": {
-        "tags": ["Orders"],
+        "tags": [
+          "Orders"
+        ],
         "summary": "Get ticket reservation",
         "parameters": [
           {
@@ -1172,7 +1147,9 @@
         }
       },
       "delete": {
-        "tags": ["Orders"],
+        "tags": [
+          "Orders"
+        ],
         "summary": "Delete ticket reservation",
         "parameters": [
           {
@@ -1211,7 +1188,9 @@
     },
     "/v1/public/checkout-orders": {
       "post": {
-        "tags": ["Orders"],
+        "tags": [
+          "Orders"
+        ],
         "summary": "Create checkout order",
         "requestBody": {
           "required": true,
@@ -1248,7 +1227,9 @@
     },
     "/v1/public/checkout-orders/{orderID}": {
       "get": {
-        "tags": ["Orders"],
+        "tags": [
+          "Orders"
+        ],
         "summary": "Get checkout order",
         "parameters": [
           {
@@ -1294,7 +1275,9 @@
     },
     "/v1/public/checkout-orders/{orderID}/stripe-session": {
       "post": {
-        "tags": ["Orders"],
+        "tags": [
+          "Orders"
+        ],
         "summary": "Create Stripe checkout session",
         "parameters": [
           {
@@ -1337,10 +1320,10 @@
           "409": {
             "$ref": "#/components/responses/ErrorResponse"
           },
-          "501": {
+          "500": {
             "$ref": "#/components/responses/ErrorResponse"
           },
-          "500": {
+          "501": {
             "$ref": "#/components/responses/ErrorResponse"
           }
         }
@@ -1348,7 +1331,9 @@
     },
     "/v1/public/stripe-sessions/{stripeSessionID}/checkout-order": {
       "get": {
-        "tags": ["Orders"],
+        "tags": [
+          "Orders"
+        ],
         "summary": "Get checkout order by Stripe session",
         "parameters": [
           {
@@ -1385,7 +1370,9 @@
     },
     "/v1/events": {
       "get": {
-        "tags": ["Events"],
+        "tags": [
+          "Events"
+        ],
         "summary": "List events",
         "description": "Organizer admins only see events belonging to their organizer. Super admins can see every event.",
         "security": [
@@ -1419,7 +1406,9 @@
         }
       },
       "post": {
-        "tags": ["Events"],
+        "tags": [
+          "Events"
+        ],
         "summary": "Create event",
         "description": "Organizer admins create events for their own organizer. Super admins can create for any organizer by passing organizer_id.",
         "security": [
@@ -1468,7 +1457,9 @@
     },
     "/v1/events/{eventID}": {
       "get": {
-        "tags": ["Events"],
+        "tags": [
+          "Events"
+        ],
         "summary": "Get event",
         "description": "Organizer admins can only fetch events belonging to their organizer. Super admins can fetch any event. The response includes sessions and ticket types for dashboard configuration.",
         "security": [
@@ -1516,7 +1507,9 @@
         }
       },
       "patch": {
-        "tags": ["Events"],
+        "tags": [
+          "Events"
+        ],
         "summary": "Update event",
         "description": "Organizer admins can only update events belonging to their organizer. Super admins can update any event.",
         "security": [
@@ -1577,7 +1570,9 @@
         }
       },
       "delete": {
-        "tags": ["Events"],
+        "tags": [
+          "Events"
+        ],
         "summary": "Delete event",
         "description": "Organizer admins can only delete events belonging to their organizer. Super admins can delete any event.",
         "security": [
@@ -1627,7 +1622,9 @@
     },
     "/v1/events/{eventID}/sessions": {
       "get": {
-        "tags": ["Events"],
+        "tags": [
+          "Events"
+        ],
         "summary": "List event sessions",
         "security": [
           {
@@ -1677,7 +1674,9 @@
         }
       },
       "post": {
-        "tags": ["Events"],
+        "tags": [
+          "Events"
+        ],
         "summary": "Create event session",
         "security": [
           {
@@ -1736,7 +1735,9 @@
     },
     "/v1/events/{eventID}/sessions/{sessionID}": {
       "patch": {
-        "tags": ["Events"],
+        "tags": [
+          "Events"
+        ],
         "summary": "Update event session",
         "security": [
           {
@@ -1802,7 +1803,9 @@
         }
       },
       "delete": {
-        "tags": ["Events"],
+        "tags": [
+          "Events"
+        ],
         "summary": "Delete event session",
         "security": [
           {
@@ -1860,7 +1863,9 @@
     },
     "/v1/events/{eventID}/sessions/{sessionID}/ticket-types": {
       "get": {
-        "tags": ["Events"],
+        "tags": [
+          "Events"
+        ],
         "summary": "List ticket types",
         "security": [
           {
@@ -1919,7 +1924,9 @@
         }
       },
       "post": {
-        "tags": ["Events"],
+        "tags": [
+          "Events"
+        ],
         "summary": "Create ticket type",
         "security": [
           {
@@ -1987,7 +1994,9 @@
     },
     "/v1/events/{eventID}/sessions/{sessionID}/ticket-types/{ticketTypeID}": {
       "patch": {
-        "tags": ["Events"],
+        "tags": [
+          "Events"
+        ],
         "summary": "Update ticket type",
         "security": [
           {
@@ -2062,7 +2071,9 @@
         }
       },
       "delete": {
-        "tags": ["Events"],
+        "tags": [
+          "Events"
+        ],
         "summary": "Delete ticket type",
         "security": [
           {
@@ -2127,127 +2138,19 @@
         }
       }
     },
-    "/v1/auth/register": {
+    "/v1/auth/firebase/login": {
       "post": {
-        "tags": ["Auth"],
-        "summary": "Start user registration",
-        "description": "Creates or updates a pending registration and sends a 6-digit OTP to the user's email.",
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Login with Firebase",
+        "description": "Verifies a Firebase ID token, creates or links the Eventy profile when the Firebase email is verified, and returns an Eventy session.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RegisterInput"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OTP sent successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MessageResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "409": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        }
-      }
-    },
-    "/v1/auth/register/verify": {
-      "post": {
-        "tags": ["Auth"],
-        "summary": "Verify registration OTP",
-        "description": "Verifies the email OTP, creates the user, and returns an auth token.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/VerifyRegisterOTPInput"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "User created successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthResult"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "409": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        }
-      }
-    },
-    "/v1/auth/register/resend-otp": {
-      "post": {
-        "tags": ["Auth"],
-        "summary": "Resend registration OTP",
-        "description": "Generates a new OTP for an existing pending registration and sends it to the same email.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ResendRegisterOTPInput"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OTP resent successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MessageResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        }
-      }
-    },
-    "/v1/auth/login": {
-      "post": {
-        "tags": ["Auth"],
-        "summary": "Login user",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LoginInput"
+                "$ref": "#/components/schemas/FirebaseLoginInput"
               }
             }
           }
@@ -2283,9 +2186,48 @@
         }
       }
     },
+    "/v1/auth/firebase/email-availability": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Check Firebase signup email availability",
+        "description": "Checks whether an email is already linked to an Eventy profile before creating a Firebase account.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailAvailabilityInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Email availability returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailAvailabilityResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
     "/v1/auth/refresh": {
       "post": {
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "summary": "Refresh session",
         "description": "Rotates the refresh token and returns a new access token plus refresh token. The refresh token can be sent in request body or HttpOnly cookie.",
         "requestBody": {
@@ -2329,125 +2271,11 @@
         }
       }
     },
-    "/v1/auth/change-password": {
-      "patch": {
-        "tags": ["Auth"],
-        "summary": "Change password",
-        "description": "Authenticated users can change their password by providing their current password.",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ChangePasswordInput"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Password changed successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MessageResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "401": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        }
-      }
-    },
-    "/v1/auth/forgot-password": {
-      "post": {
-        "tags": ["Auth"],
-        "summary": "Start password reset",
-        "description": "Generates a password reset OTP and sends it to the user's email.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ForgotPasswordInput"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Password reset OTP sent successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MessageResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "401": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        }
-      }
-    },
-    "/v1/auth/reset-password": {
-      "post": {
-        "tags": ["Auth"],
-        "summary": "Reset password",
-        "description": "Resets the user's password using the emailed OTP.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ResetPasswordInput"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Password reset successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MessageResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        }
-      }
-    },
     "/v1/auth/logout": {
       "post": {
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "summary": "Logout user",
         "description": "Revokes the current refresh session for the authenticated user. The refresh token can be sent in request body or HttpOnly cookie.",
         "security": [
@@ -2484,7 +2312,9 @@
     },
     "/v1/orders": {
       "get": {
-        "tags": ["Orders"],
+        "tags": [
+          "Orders"
+        ],
         "summary": "List my checkout orders",
         "description": "Returns the most recent checkout orders for the authenticated user (matched by email).",
         "security": [
@@ -2533,7 +2363,9 @@
     },
     "/v1/orders/{orderID}": {
       "get": {
-        "tags": ["Orders"],
+        "tags": [
+          "Orders"
+        ],
         "summary": "Get my checkout order",
         "description": "Returns a checkout order by id for the authenticated user (matched by email).",
         "security": [
@@ -2580,7 +2412,9 @@
     },
     "/v1/orders/stripe-sessions/{stripeSessionID}/checkout-order": {
       "get": {
-        "tags": ["Orders"],
+        "tags": [
+          "Orders"
+        ],
         "summary": "Get my checkout order by Stripe session id",
         "description": "Returns a checkout order by Stripe checkout session id for the authenticated user (matched by email).",
         "security": [
@@ -2626,7 +2460,9 @@
     },
     "/v1/tickets": {
       "get": {
-        "tags": ["Tickets"],
+        "tags": [
+          "Tickets"
+        ],
         "summary": "List my tickets",
         "description": "Returns tickets for the authenticated user (matched by email).",
         "security": [
@@ -2675,7 +2511,9 @@
     },
     "/v1/tickets/code/{ticketCode}": {
       "get": {
-        "tags": ["Tickets"],
+        "tags": [
+          "Tickets"
+        ],
         "summary": "Get ticket by code",
         "description": "Organizer admins and super admins can look up a ticket by its code.",
         "security": [
@@ -2724,7 +2562,9 @@
     },
     "/v1/tickets/check-in": {
       "post": {
-        "tags": ["Tickets"],
+        "tags": [
+          "Tickets"
+        ],
         "summary": "Check in ticket",
         "description": "Marks a paid ticket as checked-in by code. Optionally validate event_id and session_id to enforce gate/session scope.",
         "security": [
@@ -2776,7 +2616,9 @@
     },
     "/v1/users/me": {
       "get": {
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "summary": "Get current user profile",
         "security": [
           {
@@ -2806,7 +2648,9 @@
         }
       },
       "patch": {
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "summary": "Update current user profile",
         "security": [
           {
@@ -2852,7 +2696,9 @@
         }
       },
       "delete": {
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
         "summary": "Delete current user account",
         "security": [
           {
@@ -2895,29 +2741,14 @@
       }
     },
     "schemas": {
-      "RegisterInput": {
-        "type": "object",
-        "required": ["name", "email", "password"],
-        "properties": {
-          "name": {
-            "type": "string",
-            "example": "John Doe"
-          },
-          "email": {
-            "type": "string",
-            "format": "email",
-            "example": "john@example.com"
-          },
-          "password": {
-            "type": "string",
-            "minLength": 8,
-            "example": "secret123"
-          }
-        }
-      },
       "CreateOrganizerAdminInput": {
         "type": "object",
-        "required": ["organizer_name", "organizer_slug", "admin_name", "admin_email", "admin_password"],
+        "required": [
+          "organizer_name",
+          "organizer_slug",
+          "admin_name",
+          "admin_email"
+        ],
         "properties": {
           "organizer_name": {
             "type": "string",
@@ -2935,17 +2766,15 @@
             "type": "string",
             "format": "email",
             "example": "organizer@example.com"
-          },
-          "admin_password": {
-            "type": "string",
-            "minLength": 8,
-            "example": "secret123"
           }
         }
       },
       "AddOrganizerAdminInput": {
         "type": "object",
-        "required": ["admin_name", "admin_email", "admin_password"],
+        "required": [
+          "admin_name",
+          "admin_email"
+        ],
         "properties": {
           "admin_name": {
             "type": "string",
@@ -2955,16 +2784,15 @@
             "type": "string",
             "format": "email",
             "example": "organizer@example.com"
-          },
-          "admin_password": {
-            "type": "string",
-            "example": "secret123"
           }
         }
       },
       "UpdateOrganizerInput": {
         "type": "object",
-        "required": ["organizer_name", "organizer_slug"],
+        "required": [
+          "organizer_name",
+          "organizer_slug"
+        ],
         "properties": {
           "organizer_name": {
             "type": "string",
@@ -2978,7 +2806,10 @@
       },
       "UpdateOrganizerAdminInput": {
         "type": "object",
-        "required": ["admin_name", "admin_email"],
+        "required": [
+          "admin_name",
+          "admin_email"
+        ],
         "properties": {
           "admin_name": {
             "type": "string",
@@ -2991,20 +2822,12 @@
           }
         }
       },
-      "ResetOrganizerAdminPasswordInput": {
-        "type": "object",
-        "required": ["password"],
-        "properties": {
-          "password": {
-            "type": "string",
-            "minLength": 8,
-            "example": "newSecret123"
-          }
-        }
-      },
       "CreateCategoryInput": {
         "type": "object",
-        "required": ["name", "slug"],
+        "required": [
+          "name",
+          "slug"
+        ],
         "properties": {
           "name": {
             "type": "string",
@@ -3026,7 +2849,10 @@
       },
       "UpdateCategoryInput": {
         "type": "object",
-        "required": ["name", "slug"],
+        "required": [
+          "name",
+          "slug"
+        ],
         "properties": {
           "name": {
             "type": "string",
@@ -3048,7 +2874,18 @@
       },
       "CreateEventInput": {
         "type": "object",
-        "required": ["category_id", "title", "slug", "description", "venue_name", "venue_address", "city", "country", "status", "currency"],
+        "required": [
+          "category_id",
+          "title",
+          "slug",
+          "description",
+          "venue_name",
+          "venue_address",
+          "city",
+          "country",
+          "status",
+          "currency"
+        ],
         "properties": {
           "organizer_id": {
             "type": "string",
@@ -3082,25 +2919,25 @@
             "type": "string",
             "example": "Lagos"
           },
-            "country": {
-              "type": "string",
-              "example": "Nigeria"
-            },
-            "latitude": {
-              "type": "number",
-              "format": "double",
-              "example": 6.4281,
-              "nullable": true
-            },
-            "longitude": {
-              "type": "number",
-              "format": "double",
-              "example": 3.4219,
-              "nullable": true
-            },
-            "banner_url": {
-              "type": "string",
-              "example": "https://example.com/banner.jpg"
+          "country": {
+            "type": "string",
+            "example": "Nigeria"
+          },
+          "latitude": {
+            "type": "number",
+            "format": "double",
+            "example": 6.4281,
+            "nullable": true
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double",
+            "example": 3.4219,
+            "nullable": true
+          },
+          "banner_url": {
+            "type": "string",
+            "example": "https://example.com/banner.jpg"
           },
           "poster_url": {
             "type": "string",
@@ -3108,7 +2945,11 @@
           },
           "status": {
             "type": "string",
-            "enum": ["draft", "published", "cancelled"],
+            "enum": [
+              "draft",
+              "published",
+              "cancelled"
+            ],
             "example": "draft"
           },
           "currency": {
@@ -3123,7 +2964,18 @@
       },
       "UpdateEventInput": {
         "type": "object",
-        "required": ["category_id", "title", "slug", "description", "venue_name", "venue_address", "city", "country", "status", "currency"],
+        "required": [
+          "category_id",
+          "title",
+          "slug",
+          "description",
+          "venue_name",
+          "venue_address",
+          "city",
+          "country",
+          "status",
+          "currency"
+        ],
         "properties": {
           "category_id": {
             "type": "string",
@@ -3178,7 +3030,11 @@
           },
           "status": {
             "type": "string",
-            "enum": ["draft", "published", "cancelled"],
+            "enum": [
+              "draft",
+              "published",
+              "cancelled"
+            ],
             "example": "draft"
           },
           "currency": {
@@ -3193,7 +3049,11 @@
       },
       "CreateEventSessionInput": {
         "type": "object",
-        "required": ["starts_at", "ends_at", "status"],
+        "required": [
+          "starts_at",
+          "ends_at",
+          "status"
+        ],
         "properties": {
           "starts_at": {
             "type": "string",
@@ -3215,14 +3075,22 @@
           },
           "status": {
             "type": "string",
-            "enum": ["scheduled", "completed", "cancelled"],
+            "enum": [
+              "scheduled",
+              "completed",
+              "cancelled"
+            ],
             "example": "scheduled"
           }
         }
       },
       "UpdateEventSessionInput": {
         "type": "object",
-        "required": ["starts_at", "ends_at", "status"],
+        "required": [
+          "starts_at",
+          "ends_at",
+          "status"
+        ],
         "properties": {
           "starts_at": {
             "type": "string",
@@ -3244,14 +3112,23 @@
           },
           "status": {
             "type": "string",
-            "enum": ["scheduled", "completed", "cancelled"],
+            "enum": [
+              "scheduled",
+              "completed",
+              "cancelled"
+            ],
             "example": "scheduled"
           }
         }
       },
       "CreateTicketTypeInput": {
         "type": "object",
-        "required": ["name", "price", "quantity", "max_per_order"],
+        "required": [
+          "name",
+          "price",
+          "quantity",
+          "max_per_order"
+        ],
         "properties": {
           "name": {
             "type": "string",
@@ -3277,7 +3154,12 @@
       },
       "UpdateTicketTypeInput": {
         "type": "object",
-        "required": ["name", "price", "quantity", "max_per_order"],
+        "required": [
+          "name",
+          "price",
+          "quantity",
+          "max_per_order"
+        ],
         "properties": {
           "name": {
             "type": "string",
@@ -3301,66 +3183,58 @@
           }
         }
       },
-      "VerifyRegisterOTPInput": {
+      "FirebaseLoginInput": {
         "type": "object",
-        "required": ["email", "otp"],
+        "required": [
+          "id_token",
+          "platform"
+        ],
+        "properties": {
+          "id_token": {
+            "type": "string",
+            "description": "Firebase ID token from Firebase Auth."
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "android",
+              "ios",
+              "web"
+            ],
+            "example": "web"
+          }
+        }
+      },
+      "EmailAvailabilityInput": {
+        "type": "object",
+        "required": [
+          "email"
+        ],
         "properties": {
           "email": {
             "type": "string",
             "format": "email",
             "example": "john@example.com"
-          },
-          "otp": {
-            "type": "string",
-            "pattern": "^\\d{6}$",
-            "example": "123456"
           }
         }
       },
-      "ResendRegisterOTPInput": {
+      "EmailAvailabilityResult": {
         "type": "object",
-        "required": ["email"],
+        "required": [
+          "available"
+        ],
         "properties": {
-          "email": {
-            "type": "string",
-            "format": "email",
-            "example": "john@example.com"
-          }
-        }
-      },
-      "LoginInput": {
-        "type": "object",
-        "required": ["email", "password"],
-        "properties": {
-          "email": {
-            "type": "string",
-            "format": "email",
-            "example": "john@example.com"
-          },
-          "password": {
-            "type": "string",
-            "example": "secret123"
-          }
-        }
-      },
-      "ChangePasswordInput": {
-        "type": "object",
-        "required": ["current_password", "new_password"],
-        "properties": {
-          "current_password": {
-            "type": "string",
-            "example": "secret123"
-          },
-          "new_password": {
-            "type": "string",
-            "minLength": 8,
-            "example": "newSecret123"
+          "available": {
+            "type": "boolean"
           }
         }
       },
       "UpdateProfileInput": {
         "type": "object",
-        "required": ["name", "email"],
+        "required": [
+          "name",
+          "email"
+        ],
         "properties": {
           "name": {
             "type": "string",
@@ -3375,13 +3249,8 @@
       },
       "DeleteAccountInput": {
         "type": "object",
-        "required": ["current_password"],
-        "properties": {
-          "current_password": {
-            "type": "string",
-            "example": "secret123"
-          }
-        }
+        "required": [],
+        "properties": {}
       },
       "RefreshTokenInput": {
         "type": "object",
@@ -3401,41 +3270,16 @@
           }
         }
       },
-      "ForgotPasswordInput": {
-        "type": "object",
-        "required": ["email"],
-        "properties": {
-          "email": {
-            "type": "string",
-            "format": "email",
-            "example": "john@example.com"
-          }
-        }
-      },
-      "ResetPasswordInput": {
-        "type": "object",
-        "required": ["email", "token", "new_password"],
-        "properties": {
-          "email": {
-            "type": "string",
-            "format": "email",
-            "example": "john@example.com"
-          },
-          "token": {
-            "type": "string",
-            "pattern": "^\\d{6}$",
-            "example": "123456"
-          },
-          "new_password": {
-            "type": "string",
-            "minLength": 8,
-            "example": "newSecret123"
-          }
-        }
-      },
       "User": {
         "type": "object",
-        "required": ["id", "name", "email", "role", "created_at", "updated_at"],
+        "required": [
+          "id",
+          "name",
+          "email",
+          "role",
+          "created_at",
+          "updated_at"
+        ],
         "properties": {
           "id": {
             "type": "string",
@@ -3448,9 +3292,17 @@
             "type": "string",
             "format": "email"
           },
+          "firebase_uid": {
+            "type": "string",
+            "nullable": true
+          },
           "role": {
             "type": "string",
-            "enum": ["user", "organizer_admin", "super_admin"],
+            "enum": [
+              "user",
+              "organizer_admin",
+              "super_admin"
+            ],
             "example": "user"
           },
           "organizer_id": {
@@ -3470,7 +3322,13 @@
       },
       "Organizer": {
         "type": "object",
-        "required": ["id", "name", "slug", "created_at", "updated_at"],
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "created_at",
+          "updated_at"
+        ],
         "properties": {
           "id": {
             "type": "string",
@@ -3494,7 +3352,16 @@
       },
       "OrganizerSummary": {
         "type": "object",
-        "required": ["id", "name", "slug", "admin_count", "event_count", "session_count", "created_at", "updated_at"],
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "admin_count",
+          "event_count",
+          "session_count",
+          "created_at",
+          "updated_at"
+        ],
         "properties": {
           "id": {
             "type": "string",
@@ -3530,7 +3397,17 @@
       },
       "OrganizerListItem": {
         "type": "object",
-        "required": ["id", "name", "slug", "admin_count", "event_count", "session_count", "created_at", "updated_at", "admin"],
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "admin_count",
+          "event_count",
+          "session_count",
+          "created_at",
+          "updated_at",
+          "admin"
+        ],
         "properties": {
           "id": {
             "type": "string",
@@ -3574,7 +3451,11 @@
       },
       "OrganizerDetail": {
         "type": "object",
-        "required": ["organizer", "admins", "events"],
+        "required": [
+          "organizer",
+          "admins",
+          "events"
+        ],
         "properties": {
           "organizer": {
             "$ref": "#/components/schemas/OrganizerListItem"
@@ -3595,7 +3476,19 @@
       },
       "OrganizerManagedEvent": {
         "type": "object",
-        "required": ["id", "title", "slug", "status", "currency", "city", "country", "session_count", "ticket_type_count", "created_at", "updated_at"],
+        "required": [
+          "id",
+          "title",
+          "slug",
+          "status",
+          "currency",
+          "city",
+          "country",
+          "session_count",
+          "ticket_type_count",
+          "created_at",
+          "updated_at"
+        ],
         "properties": {
           "id": {
             "type": "string",
@@ -3609,7 +3502,11 @@
           },
           "status": {
             "type": "string",
-            "enum": ["draft", "published", "cancelled"]
+            "enum": [
+              "draft",
+              "published",
+              "cancelled"
+            ]
           },
           "currency": {
             "type": "string"
@@ -3645,7 +3542,14 @@
       },
       "AdminOverview": {
         "type": "object",
-        "required": ["scope", "stats", "needs_attention", "recent_events", "upcoming_sessions", "organizers"],
+        "required": [
+          "scope",
+          "stats",
+          "needs_attention",
+          "recent_events",
+          "upcoming_sessions",
+          "organizers"
+        ],
         "properties": {
           "scope": {
             "type": "string",
@@ -3679,25 +3583,73 @@
       },
       "AdminOverviewStats": {
         "type": "object",
-        "required": ["events", "published_events", "draft_events", "sessions", "scheduled_sessions", "ticket_types", "categories", "organizers"],
+        "required": [
+          "events",
+          "published_events",
+          "draft_events",
+          "sessions",
+          "scheduled_sessions",
+          "ticket_types",
+          "categories",
+          "organizers"
+        ],
         "properties": {
-          "events": { "type": "integer", "example": 12 },
-          "published_events": { "type": "integer", "example": 8 },
-          "draft_events": { "type": "integer", "example": 4 },
-          "sessions": { "type": "integer", "example": 18 },
-          "scheduled_sessions": { "type": "integer", "example": 16 },
-          "ticket_types": { "type": "integer", "example": 24 },
-          "categories": { "type": "integer", "example": 6 },
-          "organizers": { "type": "integer", "example": 3 }
+          "events": {
+            "type": "integer",
+            "example": 12
+          },
+          "published_events": {
+            "type": "integer",
+            "example": 8
+          },
+          "draft_events": {
+            "type": "integer",
+            "example": 4
+          },
+          "sessions": {
+            "type": "integer",
+            "example": 18
+          },
+          "scheduled_sessions": {
+            "type": "integer",
+            "example": 16
+          },
+          "ticket_types": {
+            "type": "integer",
+            "example": 24
+          },
+          "categories": {
+            "type": "integer",
+            "example": 6
+          },
+          "organizers": {
+            "type": "integer",
+            "example": 3
+          }
         }
       },
       "AdminOverviewNeedsAttention": {
         "type": "object",
-        "required": ["draft_events_count", "events_without_sessions_count", "sessions_without_ticket_types_count", "events_without_sessions", "sessions_without_ticket_types"],
+        "required": [
+          "draft_events_count",
+          "events_without_sessions_count",
+          "sessions_without_ticket_types_count",
+          "events_without_sessions",
+          "sessions_without_ticket_types"
+        ],
         "properties": {
-          "draft_events_count": { "type": "integer", "example": 4 },
-          "events_without_sessions_count": { "type": "integer", "example": 2 },
-          "sessions_without_ticket_types_count": { "type": "integer", "example": 3 },
+          "draft_events_count": {
+            "type": "integer",
+            "example": 4
+          },
+          "events_without_sessions_count": {
+            "type": "integer",
+            "example": 2
+          },
+          "sessions_without_ticket_types_count": {
+            "type": "integer",
+            "example": 3
+          },
           "events_without_sessions": {
             "type": "array",
             "items": {
@@ -3714,72 +3666,204 @@
       },
       "AdminOverviewEvent": {
         "type": "object",
-        "required": ["id", "organizer_id", "category_id", "title", "slug", "status", "venue_name", "city", "country", "organizer_name", "category_name", "created_at", "updated_at"],
+        "required": [
+          "id",
+          "organizer_id",
+          "category_id",
+          "title",
+          "slug",
+          "status",
+          "venue_name",
+          "city",
+          "country",
+          "organizer_name",
+          "category_name",
+          "created_at",
+          "updated_at"
+        ],
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "organizer_id": { "type": "string", "format": "uuid" },
-          "category_id": { "type": "string", "format": "uuid" },
-          "title": { "type": "string" },
-          "slug": { "type": "string" },
-          "status": { "type": "string" },
-          "venue_name": { "type": "string" },
-          "city": { "type": "string" },
-          "country": { "type": "string" },
-          "organizer_name": { "type": "string" },
-          "category_name": { "type": "string" },
-          "created_at": { "type": "string", "format": "date-time" },
-          "updated_at": { "type": "string", "format": "date-time" }
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "organizer_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "category_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "venue_name": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          },
+          "organizer_name": {
+            "type": "string"
+          },
+          "category_name": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "AdminOverviewSession": {
         "type": "object",
-        "required": ["id", "event_id", "event_title", "event_slug", "event_currency", "status", "starts_at", "ticket_type_count"],
+        "required": [
+          "id",
+          "event_id",
+          "event_title",
+          "event_slug",
+          "event_currency",
+          "status",
+          "starts_at",
+          "ticket_type_count"
+        ],
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "event_id": { "type": "string", "format": "uuid" },
-          "event_title": { "type": "string" },
-          "event_slug": { "type": "string" },
-          "event_currency": { "type": "string" },
-          "status": { "type": "string" },
-          "starts_at": { "type": "string", "format": "date-time" },
-          "ticket_type_count": { "type": "integer", "example": 4 }
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "event_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "event_title": {
+            "type": "string"
+          },
+          "event_slug": {
+            "type": "string"
+          },
+          "event_currency": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ticket_type_count": {
+            "type": "integer",
+            "example": 4
+          }
         }
       },
       "AdminOverviewAttentionEvent": {
         "type": "object",
-        "required": ["id", "title", "slug", "created_at"],
+        "required": [
+          "id",
+          "title",
+          "slug",
+          "created_at"
+        ],
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "title": { "type": "string" },
-          "slug": { "type": "string" },
-          "created_at": { "type": "string", "format": "date-time" }
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "AdminOverviewAttentionSession": {
         "type": "object",
-        "required": ["id", "event_id", "event_title", "starts_at", "status"],
+        "required": [
+          "id",
+          "event_id",
+          "event_title",
+          "starts_at",
+          "status"
+        ],
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "event_id": { "type": "string", "format": "uuid" },
-          "event_title": { "type": "string" },
-          "starts_at": { "type": "string", "format": "date-time" },
-          "status": { "type": "string" }
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "event_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "event_title": {
+            "type": "string"
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string"
+          }
         }
       },
       "AdminOverviewOrganizerSummary": {
         "type": "object",
-        "required": ["id", "name", "slug", "event_count", "session_count"],
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "event_count",
+          "session_count"
+        ],
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "name": { "type": "string" },
-          "slug": { "type": "string" },
-          "event_count": { "type": "integer", "example": 3 },
-          "session_count": { "type": "integer", "example": 7 }
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "event_count": {
+            "type": "integer",
+            "example": 3
+          },
+          "session_count": {
+            "type": "integer",
+            "example": 7
+          }
         }
       },
       "AdminPayments": {
         "type": "object",
-        "required": ["scope", "summary", "trends", "items"],
+        "required": [
+          "scope",
+          "summary",
+          "trends",
+          "items"
+        ],
         "properties": {
           "scope": {
             "type": "string",
@@ -3804,48 +3888,149 @@
       },
       "AdminPaymentsSummary": {
         "type": "object",
-        "required": ["gross", "paid_orders", "pending_orders", "failed_or_expired_orders", "average_order_value", "currency"],
+        "required": [
+          "gross",
+          "paid_orders",
+          "pending_orders",
+          "failed_or_expired_orders",
+          "average_order_value",
+          "currency"
+        ],
         "properties": {
-          "gross": { "type": "number", "format": "float", "example": 19450.5 },
-          "paid_orders": { "type": "integer", "example": 42 },
-          "pending_orders": { "type": "integer", "example": 7 },
-          "failed_or_expired_orders": { "type": "integer", "example": 3 },
-          "average_order_value": { "type": "number", "format": "float", "example": 463.11 },
-          "currency": { "type": "string", "example": "EUR" }
+          "gross": {
+            "type": "number",
+            "format": "float",
+            "example": 19450.5
+          },
+          "paid_orders": {
+            "type": "integer",
+            "example": 42
+          },
+          "pending_orders": {
+            "type": "integer",
+            "example": 7
+          },
+          "failed_or_expired_orders": {
+            "type": "integer",
+            "example": 3
+          },
+          "average_order_value": {
+            "type": "number",
+            "format": "float",
+            "example": 463.11
+          },
+          "currency": {
+            "type": "string",
+            "example": "EUR"
+          }
         }
       },
       "AdminPaymentTrend": {
         "type": "object",
-        "required": ["day", "gross", "paid_orders"],
+        "required": [
+          "day",
+          "gross",
+          "paid_orders"
+        ],
         "properties": {
-          "day": { "type": "string", "example": "2026-04-15" },
-          "gross": { "type": "number", "format": "float", "example": 1250.0 },
-          "paid_orders": { "type": "integer", "example": 4 }
+          "day": {
+            "type": "string",
+            "example": "2026-04-15"
+          },
+          "gross": {
+            "type": "number",
+            "format": "float",
+            "example": 1250
+          },
+          "paid_orders": {
+            "type": "integer",
+            "example": 4
+          }
         }
       },
       "AdminPaymentItem": {
         "type": "object",
-        "required": ["id", "order_number", "status", "amount", "currency", "customer_name", "customer_email", "created_at", "updated_at"],
+        "required": [
+          "id",
+          "order_number",
+          "status",
+          "amount",
+          "currency",
+          "customer_name",
+          "customer_email",
+          "created_at",
+          "updated_at"
+        ],
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "order_number": { "type": "string" },
-          "status": { "type": "string", "example": "paid" },
-          "amount": { "type": "number", "format": "float", "example": 299.99 },
-          "currency": { "type": "string", "example": "EUR" },
-          "customer_name": { "type": "string" },
-          "customer_email": { "type": "string", "format": "email" },
-          "event_id": { "type": "string", "format": "uuid", "nullable": true },
-          "event_title": { "type": "string" },
-          "organizer_id": { "type": "string", "format": "uuid", "nullable": true },
-          "organizer_name": { "type": "string" },
-          "paid_at": { "type": "string", "format": "date-time", "nullable": true },
-          "created_at": { "type": "string", "format": "date-time" },
-          "updated_at": { "type": "string", "format": "date-time" }
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "order_number": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "example": "paid"
+          },
+          "amount": {
+            "type": "number",
+            "format": "float",
+            "example": 299.99
+          },
+          "currency": {
+            "type": "string",
+            "example": "EUR"
+          },
+          "customer_name": {
+            "type": "string"
+          },
+          "customer_email": {
+            "type": "string",
+            "format": "email"
+          },
+          "event_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "event_title": {
+            "type": "string"
+          },
+          "organizer_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "organizer_name": {
+            "type": "string"
+          },
+          "paid_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "OrganizerAdmin": {
         "type": "object",
-        "required": ["id", "name", "email", "role", "organizer_id", "created_at", "updated_at"],
+        "required": [
+          "id",
+          "name",
+          "email",
+          "role",
+          "organizer_id",
+          "created_at",
+          "updated_at"
+        ],
         "properties": {
           "id": {
             "type": "string",
@@ -3860,7 +4045,9 @@
           },
           "role": {
             "type": "string",
-            "enum": ["organizer_admin"]
+            "enum": [
+              "organizer_admin"
+            ]
           },
           "organizer_id": {
             "type": "string",
@@ -3878,7 +4065,10 @@
       },
       "CreateOrganizerAdminResult": {
         "type": "object",
-        "required": ["organizer", "admin"],
+        "required": [
+          "organizer",
+          "admin"
+        ],
         "properties": {
           "organizer": {
             "$ref": "#/components/schemas/Organizer"
@@ -3890,7 +4080,13 @@
       },
       "Category": {
         "type": "object",
-        "required": ["id", "name", "slug", "created_at", "updated_at"],
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "created_at",
+          "updated_at"
+        ],
         "properties": {
           "id": {
             "type": "string",
@@ -3920,7 +4116,23 @@
       },
       "Event": {
         "type": "object",
-        "required": ["id", "organizer_id", "category_id", "title", "slug", "description", "venue_name", "venue_address", "city", "country", "status", "currency", "is_featured", "created_at", "updated_at"],
+        "required": [
+          "id",
+          "organizer_id",
+          "category_id",
+          "title",
+          "slug",
+          "description",
+          "venue_name",
+          "venue_address",
+          "city",
+          "country",
+          "status",
+          "currency",
+          "is_featured",
+          "created_at",
+          "updated_at"
+        ],
         "properties": {
           "id": {
             "type": "string",
@@ -3952,28 +4164,32 @@
           "city": {
             "type": "string"
           },
-            "country": {
-              "type": "string"
-            },
-            "latitude": {
-              "type": "number",
-              "format": "double",
-              "nullable": true
-            },
-            "longitude": {
-              "type": "number",
-              "format": "double",
-              "nullable": true
-            },
-            "banner_url": {
-              "type": "string"
-            },
+          "country": {
+            "type": "string"
+          },
+          "latitude": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "banner_url": {
+            "type": "string"
+          },
           "poster_url": {
             "type": "string"
           },
           "status": {
             "type": "string",
-            "enum": ["draft", "published", "cancelled"]
+            "enum": [
+              "draft",
+              "published",
+              "cancelled"
+            ]
           },
           "currency": {
             "type": "string"
@@ -3993,7 +4209,15 @@
       },
       "EventSession": {
         "type": "object",
-        "required": ["id", "event_id", "starts_at", "ends_at", "status", "created_at", "updated_at"],
+        "required": [
+          "id",
+          "event_id",
+          "starts_at",
+          "ends_at",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
         "properties": {
           "id": {
             "type": "string",
@@ -4023,7 +4247,11 @@
           },
           "status": {
             "type": "string",
-            "enum": ["scheduled", "completed", "cancelled"]
+            "enum": [
+              "scheduled",
+              "completed",
+              "cancelled"
+            ]
           },
           "created_at": {
             "type": "string",
@@ -4037,7 +4265,16 @@
       },
       "TicketType": {
         "type": "object",
-        "required": ["id", "event_session_id", "name", "price", "quantity", "max_per_order", "created_at", "updated_at"],
+        "required": [
+          "id",
+          "event_session_id",
+          "name",
+          "price",
+          "quantity",
+          "max_per_order",
+          "created_at",
+          "updated_at"
+        ],
         "properties": {
           "id": {
             "type": "string",
@@ -4079,7 +4316,9 @@
           },
           {
             "type": "object",
-            "required": ["ticket_types"],
+            "required": [
+              "ticket_types"
+            ],
             "properties": {
               "ticket_types": {
                 "type": "array",
@@ -4098,7 +4337,9 @@
           },
           {
             "type": "object",
-            "required": ["sessions"],
+            "required": [
+              "sessions"
+            ],
             "properties": {
               "sessions": {
                 "type": "array",
@@ -4209,7 +4450,11 @@
           },
           "status": {
             "type": "string",
-            "enum": ["draft", "published", "cancelled"]
+            "enum": [
+              "draft",
+              "published",
+              "cancelled"
+            ]
           },
           "currency": {
             "type": "string"
@@ -4264,7 +4509,9 @@
           },
           {
             "type": "object",
-            "required": ["sessions"],
+            "required": [
+              "sessions"
+            ],
             "properties": {
               "sessions": {
                 "type": "array",
@@ -4278,7 +4525,13 @@
       },
       "AuthResult": {
         "type": "object",
-        "required": ["access_token", "access_expires_at", "refresh_token", "refresh_expires_at", "user"],
+        "required": [
+          "access_token",
+          "access_expires_at",
+          "refresh_token",
+          "refresh_expires_at",
+          "user"
+        ],
         "properties": {
           "access_token": {
             "type": "string"
@@ -4301,7 +4554,9 @@
       },
       "MessageResponse": {
         "type": "object",
-        "required": ["message"],
+        "required": [
+          "message"
+        ],
         "properties": {
           "message": {
             "type": "string"
@@ -4310,7 +4565,14 @@
       },
       "Profile": {
         "type": "object",
-        "required": ["id", "name", "email", "role", "created_at", "updated_at"],
+        "required": [
+          "id",
+          "name",
+          "email",
+          "role",
+          "created_at",
+          "updated_at"
+        ],
         "properties": {
           "id": {
             "type": "string",
@@ -4323,9 +4585,17 @@
             "type": "string",
             "format": "email"
           },
+          "firebase_uid": {
+            "type": "string",
+            "nullable": true
+          },
           "role": {
             "type": "string",
-            "enum": ["user", "organizer_admin", "super_admin"]
+            "enum": [
+              "user",
+              "organizer_admin",
+              "super_admin"
+            ]
           },
           "organizer_id": {
             "type": "string",
@@ -4344,14 +4614,15 @@
       },
       "ErrorResponse": {
         "type": "object",
-        "required": ["message"],
+        "required": [
+          "message"
+        ],
         "properties": {
           "message": {
             "type": "string"
           }
         }
-      }
-      ,
+      },
       "CheckoutOrderItem": {
         "type": "object",
         "required": [
@@ -4367,16 +4638,41 @@
           "session_ends_at"
         ],
         "properties": {
-          "ticket_type_id": { "type": "string", "format": "uuid" },
-          "ticket_type_name": { "type": "string" },
-          "quantity": { "type": "integer" },
-          "unit_price": { "type": "number" },
-          "currency": { "type": "string" },
-          "event_id": { "type": "string", "format": "uuid" },
-          "event_title": { "type": "string" },
-          "session_id": { "type": "string", "format": "uuid" },
-          "session_starts_at": { "type": "string", "format": "date-time" },
-          "session_ends_at": { "type": "string", "format": "date-time" }
+          "ticket_type_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ticket_type_name": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer"
+          },
+          "unit_price": {
+            "type": "number"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "event_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "event_title": {
+            "type": "string"
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "session_starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "session_ends_at": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "CheckoutOrder": {
@@ -4397,24 +4693,66 @@
           "items"
         ],
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "token": { "type": "string" },
-          "reservation_id": { "type": "string", "format": "uuid" },
-          "order_number": { "type": "string" },
-          "status": { "type": "string" },
-          "customer_name": { "type": "string" },
-          "customer_email": { "type": "string", "format": "email" },
-          "currency": { "type": "string" },
-          "subtotal": { "type": "number" },
-          "expires_at": { "type": "string", "format": "date-time" },
-          "created_at": { "type": "string", "format": "date-time" },
-          "updated_at": { "type": "string", "format": "date-time" },
-          "stripe_checkout_session_id": { "type": "string" },
-          "paid_at": { "type": "string", "format": "date-time", "nullable": true },
-          "tickets_emailed_at": { "type": "string", "format": "date-time", "nullable": true },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "token": {
+            "type": "string"
+          },
+          "reservation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "order_number": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "customer_name": {
+            "type": "string"
+          },
+          "customer_email": {
+            "type": "string",
+            "format": "email"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "subtotal": {
+            "type": "number"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "stripe_checkout_session_id": {
+            "type": "string"
+          },
+          "paid_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "tickets_emailed_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
           "items": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/CheckoutOrderItem" }
+            "items": {
+              "$ref": "#/components/schemas/CheckoutOrderItem"
+            }
           }
         }
       },
@@ -4434,67 +4772,156 @@
           "items"
         ],
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "order_number": { "type": "string" },
-          "status": { "type": "string" },
-          "customer_name": { "type": "string" },
-          "customer_email": { "type": "string", "format": "email" },
-          "currency": { "type": "string" },
-          "subtotal": { "type": "number" },
-          "expires_at": { "type": "string", "format": "date-time" },
-          "created_at": { "type": "string", "format": "date-time" },
-          "updated_at": { "type": "string", "format": "date-time" },
-          "stripe_checkout_session_id": { "type": "string" },
-          "paid_at": { "type": "string", "format": "date-time", "nullable": true },
-          "tickets_emailed_at": { "type": "string", "format": "date-time", "nullable": true },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "order_number": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "customer_name": {
+            "type": "string"
+          },
+          "customer_email": {
+            "type": "string",
+            "format": "email"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "subtotal": {
+            "type": "number"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "stripe_checkout_session_id": {
+            "type": "string"
+          },
+          "paid_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "tickets_emailed_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
           "items": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/CheckoutOrderItem" }
+            "items": {
+              "$ref": "#/components/schemas/CheckoutOrderItem"
+            }
           }
         }
       },
       "CreateCheckoutOrderInput": {
         "type": "object",
-        "required": ["reservation_id", "reservation_token", "customer_name", "customer_email"],
+        "required": [
+          "reservation_id",
+          "reservation_token",
+          "customer_name",
+          "customer_email"
+        ],
         "properties": {
-          "reservation_id": { "type": "string", "format": "uuid" },
-          "reservation_token": { "type": "string" },
-          "customer_name": { "type": "string" },
-          "customer_email": { "type": "string", "format": "email" }
+          "reservation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reservation_token": {
+            "type": "string"
+          },
+          "customer_name": {
+            "type": "string"
+          },
+          "customer_email": {
+            "type": "string",
+            "format": "email"
+          }
         }
       },
       "CreateStripeCheckoutSessionInput": {
         "type": "object",
-        "required": ["order_token"],
+        "required": [
+          "order_token"
+        ],
         "properties": {
-          "order_token": { "type": "string" }
+          "order_token": {
+            "type": "string"
+          }
         }
       },
       "StripeCheckoutSessionResponse": {
         "type": "object",
-        "required": ["session_id", "checkout_url", "order_id", "order_number", "expires_at"],
+        "required": [
+          "session_id",
+          "checkout_url",
+          "order_id",
+          "order_number",
+          "expires_at"
+        ],
         "properties": {
-          "session_id": { "type": "string" },
-          "checkout_url": { "type": "string" },
-          "order_id": { "type": "string", "format": "uuid" },
-          "order_number": { "type": "string" },
-          "expires_at": { "type": "string", "format": "date-time" }
+          "session_id": {
+            "type": "string"
+          },
+          "checkout_url": {
+            "type": "string"
+          },
+          "order_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "order_number": {
+            "type": "string"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "UpsertTicketReservationItemInput": {
         "type": "object",
-        "required": ["ticket_type_id", "quantity"],
+        "required": [
+          "ticket_type_id",
+          "quantity"
+        ],
         "properties": {
-          "ticket_type_id": { "type": "string", "format": "uuid" },
-          "quantity": { "type": "integer" }
+          "ticket_type_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "quantity": {
+            "type": "integer"
+          }
         }
       },
       "UpsertTicketReservationInput": {
         "type": "object",
-        "required": ["items"],
+        "required": [
+          "items"
+        ],
         "properties": {
-          "reservation_id": { "type": "string", "format": "uuid" },
-          "reservation_token": { "type": "string" },
+          "reservation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reservation_token": {
+            "type": "string"
+          },
           "items": {
             "type": "array",
             "items": {
@@ -4520,32 +4947,84 @@
           "session_ends_at"
         ],
         "properties": {
-          "ticket_type_id": { "type": "string", "format": "uuid" },
-          "ticket_type_name": { "type": "string" },
-          "quantity": { "type": "integer" },
-          "unit_price": { "type": "number" },
-          "currency": { "type": "string" },
-          "max_per_order": { "type": "integer" },
-          "available_quantity": { "type": "integer" },
-          "event_id": { "type": "string", "format": "uuid" },
-          "event_title": { "type": "string" },
-          "session_id": { "type": "string", "format": "uuid" },
-          "session_starts_at": { "type": "string", "format": "date-time" },
-          "session_ends_at": { "type": "string", "format": "date-time" }
+          "ticket_type_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ticket_type_name": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer"
+          },
+          "unit_price": {
+            "type": "number"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "max_per_order": {
+            "type": "integer"
+          },
+          "available_quantity": {
+            "type": "integer"
+          },
+          "event_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "event_title": {
+            "type": "string"
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "session_starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "session_ends_at": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "TicketReservation": {
         "type": "object",
-        "required": ["id", "token", "expires_at", "created_at", "updated_at", "items"],
+        "required": [
+          "id",
+          "token",
+          "expires_at",
+          "created_at",
+          "updated_at",
+          "items"
+        ],
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "token": { "type": "string" },
-          "expires_at": { "type": "string", "format": "date-time" },
-          "created_at": { "type": "string", "format": "date-time" },
-          "updated_at": { "type": "string", "format": "date-time" },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "token": {
+            "type": "string"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
           "items": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/TicketReservationItem" }
+            "items": {
+              "$ref": "#/components/schemas/TicketReservationItem"
+            }
           }
         }
       },
@@ -4570,42 +5049,113 @@
           "updated_at"
         ],
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "code": { "type": "string" },
-          "order_id": { "type": "string", "format": "uuid" },
-          "order_number": { "type": "string" },
-          "order_status": { "type": "string" },
-          "customer_name": { "type": "string" },
-          "customer_email": { "type": "string", "format": "email" },
-          "ticket_type_id": { "type": "string", "format": "uuid" },
-          "ticket_type_name": { "type": "string" },
-          "event_id": { "type": "string", "format": "uuid" },
-          "event_title": { "type": "string" },
-          "session_id": { "type": "string", "format": "uuid" },
-          "session_starts_at": { "type": "string", "format": "date-time" },
-          "session_ends_at": { "type": "string", "format": "date-time" },
-          "paid_at": { "type": "string", "format": "date-time", "nullable": true },
-          "checked_in_at": { "type": "string", "format": "date-time", "nullable": true },
-          "checked_in_by_user_id": { "type": "string", "format": "uuid", "nullable": true },
-          "created_at": { "type": "string", "format": "date-time" },
-          "updated_at": { "type": "string", "format": "date-time" }
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string"
+          },
+          "order_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "order_number": {
+            "type": "string"
+          },
+          "order_status": {
+            "type": "string"
+          },
+          "customer_name": {
+            "type": "string"
+          },
+          "customer_email": {
+            "type": "string",
+            "format": "email"
+          },
+          "ticket_type_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ticket_type_name": {
+            "type": "string"
+          },
+          "event_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "event_title": {
+            "type": "string"
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "session_starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "session_ends_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "paid_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "checked_in_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "checked_in_by_user_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "CheckInTicketInput": {
         "type": "object",
-        "required": ["code"],
+        "required": [
+          "code"
+        ],
         "properties": {
-          "code": { "type": "string" },
-          "event_id": { "type": "string", "format": "uuid" },
-          "session_id": { "type": "string", "format": "uuid" }
+          "code": {
+            "type": "string"
+          },
+          "event_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid"
+          }
         }
       },
       "CheckInResult": {
         "type": "object",
-        "required": ["ticket", "already_checked"],
+        "required": [
+          "ticket",
+          "already_checked"
+        ],
         "properties": {
-          "ticket": { "$ref": "#/components/schemas/Ticket" },
-          "already_checked": { "type": "boolean" }
+          "ticket": {
+            "$ref": "#/components/schemas/Ticket"
+          },
+          "already_checked": {
+            "type": "boolean"
+          }
         }
       }
     },

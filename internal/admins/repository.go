@@ -22,7 +22,7 @@ func NewRepository(db *sql.DB) *Repository {
 }
 
 func (r *Repository) CreateOrganizerAdmin(ctx context.Context, input CreateOrganizerAdminInput) (CreateOrganizerAdminResult, error) {
-	passwordHash, err := hashPassword(input.AdminPassword)
+	passwordHash, err := hashPassword(uuid.NewString())
 	if err != nil {
 		return CreateOrganizerAdminResult{}, err
 	}
@@ -1156,7 +1156,7 @@ func (r *Repository) AddOrganizerAdmin(ctx context.Context, organizerID uuid.UUI
 		return OrganizerAdmin{}, err
 	}
 
-	passwordHash, err := hashPassword(input.AdminPassword)
+	passwordHash, err := hashPassword(uuid.NewString())
 	if err != nil {
 		return OrganizerAdmin{}, err
 	}
@@ -1252,33 +1252,6 @@ WHERE organizer_id = ? AND id = ? AND role = ?
 	}
 
 	return r.GetOrganizerAdmin(ctx, organizerID, adminID)
-}
-
-func (r *Repository) ResetOrganizerAdminPassword(ctx context.Context, organizerID uuid.UUID, adminID uuid.UUID, password string) error {
-	passwordHash, err := hashPassword(password)
-	if err != nil {
-		return err
-	}
-
-	result, err := r.db.ExecContext(ctx, `
-UPDATE users
-SET password_hash = ?
-WHERE organizer_id = ? AND id = ? AND role = ?
-`, passwordHash, organizerID.String(), adminID.String(), roles.OrganizerAdmin)
-	if err != nil {
-		return err
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if rowsAffected == 0 {
-		return r.ensureOrganizerAdminExists(ctx, organizerID, adminID)
-	}
-
-	return nil
 }
 
 func (r *Repository) DeleteOrganizerAdmin(ctx context.Context, organizerID uuid.UUID, adminID uuid.UUID) error {

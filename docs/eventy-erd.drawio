@@ -1,0 +1,116 @@
+<mxfile host="app.diagrams.net" modified="2026-05-02T00:00:00.000Z" agent="Codex" version="24.7.17" type="device">
+  <diagram id="eventy-erd" name="Eventy ERD">
+    <mxGraphModel dx="1800" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Eventy Database ERD&#xa;Current schema after migrations 000001-000017. Dashed relations are logical snapshot references without database FK constraints." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1f2937;fontColor=#ffffff;strokeColor=#111827;fontStyle=1;spacing=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="30" width="680" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="users" value="users&#xa;PK id CHAR(36)&#xa;name VARCHAR(120)&#xa;email VARCHAR(255) UNIQUE&#xa;firebase_uid VARCHAR(128) UNIQUE&#xa;password_hash VARCHAR(255)&#xa;role VARCHAR(20)&#xa;FK organizer_id CHAR(36) NULL&#xa;created_at TIMESTAMP&#xa;updated_at TIMESTAMP" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=10;fillColor=#e1f5fe;strokeColor=#0288d1;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="170" width="300" height="230" as="geometry" />
+        </mxCell>
+        <mxCell id="organizers" value="organizers&#xa;PK id CHAR(36)&#xa;name VARCHAR(150)&#xa;slug VARCHAR(180) UNIQUE&#xa;created_at TIMESTAMP&#xa;updated_at TIMESTAMP" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=10;fillColor=#fff8e1;strokeColor=#f9a825;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="430" y="170" width="280" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="auth_sessions" value="auth_sessions&#xa;PK id CHAR(36)&#xa;FK user_id CHAR(36)&#xa;refresh_token_hash VARCHAR(255) UNIQUE&#xa;expires_at TIMESTAMP&#xa;revoked_at TIMESTAMP NULL&#xa;created_at TIMESTAMP&#xa;updated_at TIMESTAMP" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=10;fillColor=#e1f5fe;strokeColor=#0288d1;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="450" width="300" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="notification_device_tokens" value="notification_device_tokens&#xa;PK id CHAR(36)&#xa;FK user_id CHAR(36)&#xa;token VARCHAR(512) UNIQUE&#xa;provider VARCHAR(20)&#xa;platform VARCHAR(20)&#xa;device_name VARCHAR(255) NULL&#xa;revoked_at TIMESTAMP NULL&#xa;created_at TIMESTAMP&#xa;updated_at TIMESTAMP" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=10;fillColor=#e1f5fe;strokeColor=#0288d1;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="690" width="300" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="categories" value="categories&#xa;PK id CHAR(36)&#xa;name VARCHAR(120) UNIQUE&#xa;slug VARCHAR(140) UNIQUE&#xa;description TEXT NULL&#xa;image_url VARCHAR(500) NULL&#xa;created_at TIMESTAMP&#xa;updated_at TIMESTAMP" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=10;fillColor=#f3e5f5;strokeColor=#8e24aa;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="800" y="170" width="300" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="events" value="events&#xa;PK id CHAR(36)&#xa;FK organizer_id CHAR(36)&#xa;FK category_id CHAR(36)&#xa;title VARCHAR(180)&#xa;slug VARCHAR(220) UNIQUE&#xa;description TEXT&#xa;venue_name / venue_address&#xa;city / country&#xa;latitude DECIMAL NULL&#xa;longitude DECIMAL NULL&#xa;banner_url / poster_url NULL&#xa;status VARCHAR(20)&#xa;currency VARCHAR(10) DEFAULT EUR&#xa;is_featured BOOLEAN&#xa;created_at TIMESTAMP&#xa;updated_at TIMESTAMP" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=10;fillColor=#e8f5e9;strokeColor=#2e7d32;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="800" y="410" width="330" height="330" as="geometry" />
+        </mxCell>
+        <mxCell id="event_sessions" value="event_sessions&#xa;PK id CHAR(36)&#xa;FK event_id CHAR(36)&#xa;starts_at TIMESTAMP&#xa;ends_at TIMESTAMP&#xa;sales_starts_at TIMESTAMP NULL&#xa;sales_ends_at TIMESTAMP NULL&#xa;status VARCHAR(20)&#xa;created_at TIMESTAMP&#xa;updated_at TIMESTAMP" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=10;fillColor=#e8f5e9;strokeColor=#2e7d32;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1210" y="420" width="300" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="ticket_types" value="ticket_types&#xa;PK id CHAR(36)&#xa;FK event_session_id CHAR(36)&#xa;name VARCHAR(120)&#xa;description VARCHAR(255) NULL&#xa;price DECIMAL(12,2)&#xa;quantity INT&#xa;max_per_order INT&#xa;created_at TIMESTAMP&#xa;updated_at TIMESTAMP" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=10;fillColor=#e8f5e9;strokeColor=#2e7d32;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1210" y="710" width="300" height="210" as="geometry" />
+        </mxCell>
+        <mxCell id="ticket_reservations" value="ticket_reservations&#xa;PK id CHAR(36)&#xa;token CHAR(36) UNIQUE&#xa;expires_at TIMESTAMP&#xa;created_at TIMESTAMP&#xa;updated_at TIMESTAMP" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=10;fillColor=#fff3e0;strokeColor=#ef6c00;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="430" y="470" width="290" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="ticket_reservation_items" value="ticket_reservation_items&#xa;PK id CHAR(36)&#xa;FK reservation_id CHAR(36)&#xa;FK ticket_type_id CHAR(36)&#xa;quantity INT&#xa;UNIQUE reservation_id + ticket_type_id&#xa;created_at TIMESTAMP&#xa;updated_at TIMESTAMP" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=10;fillColor=#fff3e0;strokeColor=#ef6c00;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="430" y="710" width="300" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="checkout_orders" value="checkout_orders&#xa;PK id CHAR(36)&#xa;token CHAR(36) UNIQUE&#xa;FK reservation_id CHAR(36) UNIQUE&#xa;order_number VARCHAR(32) UNIQUE&#xa;status VARCHAR(32)&#xa;customer_name VARCHAR(255)&#xa;customer_email VARCHAR(255)&#xa;currency CHAR(3)&#xa;subtotal DECIMAL(12,2)&#xa;expires_at TIMESTAMP&#xa;stripe_checkout_session_id UNIQUE NULL&#xa;stripe_payment_intent_id UNIQUE NULL&#xa;stripe_customer_id NULL&#xa;paid_at TIMESTAMP NULL&#xa;tickets_emailed_at TIMESTAMP NULL&#xa;created_at TIMESTAMP&#xa;updated_at TIMESTAMP" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=10;fillColor=#fce4ec;strokeColor=#c2185b;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="960" width="330" height="350" as="geometry" />
+        </mxCell>
+        <mxCell id="checkout_order_items" value="checkout_order_items&#xa;PK id CHAR(36)&#xa;FK order_id CHAR(36)&#xa;FK ticket_type_id CHAR(36)&#xa;ticket_type_name VARCHAR(255)&#xa;quantity INT&#xa;unit_price DECIMAL(12,2)&#xa;currency CHAR(3)&#xa;event_id CHAR(36) snapshot&#xa;event_title VARCHAR(255)&#xa;session_id CHAR(36) snapshot&#xa;session_starts_at TIMESTAMP&#xa;session_ends_at TIMESTAMP&#xa;created_at TIMESTAMP&#xa;updated_at TIMESTAMP" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=10;fillColor=#fce4ec;strokeColor=#c2185b;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="480" y="980" width="340" height="310" as="geometry" />
+        </mxCell>
+        <mxCell id="tickets" value="tickets&#xa;PK id CHAR(36)&#xa;code CHAR(36) UNIQUE&#xa;FK order_id CHAR(36)&#xa;FK order_item_id CHAR(36)&#xa;customer_name VARCHAR(255)&#xa;customer_email VARCHAR(255)&#xa;ticket_type_id CHAR(36) snapshot&#xa;ticket_type_name VARCHAR(255)&#xa;event_id CHAR(36) snapshot&#xa;event_title VARCHAR(255)&#xa;session_id CHAR(36) snapshot&#xa;session_starts_at TIMESTAMP&#xa;session_ends_at TIMESTAMP&#xa;checked_in_at TIMESTAMP NULL&#xa;checked_in_by_user_id CHAR(36) NULL&#xa;created_at TIMESTAMP&#xa;updated_at TIMESTAMP" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=10;fillColor=#ede7f6;strokeColor=#5e35b1;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="930" y="960" width="360" height="350" as="geometry" />
+        </mxCell>
+        <mxCell id="legacy_note" value="Dropped legacy tables&#xa;pending_registrations and password_reset_tokens are removed by migration 000016 after Firebase auth migration." style="shape=note;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1350" y="1000" width="300" height="120" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_users_organizers" value="organizer_id" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERone;startArrow=ERmany;strokeColor=#455a64;" edge="1" parent="1" source="users" target="organizers">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_auth_users" value="user_id" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERone;startArrow=ERmany;strokeColor=#455a64;" edge="1" parent="1" source="auth_sessions" target="users">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_devices_users" value="user_id" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERone;startArrow=ERmany;strokeColor=#455a64;" edge="1" parent="1" source="notification_device_tokens" target="users">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_events_organizers" value="organizer_id" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERone;startArrow=ERmany;strokeColor=#455a64;" edge="1" parent="1" source="events" target="organizers">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_events_categories" value="category_id" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERone;startArrow=ERmany;strokeColor=#455a64;" edge="1" parent="1" source="events" target="categories">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_sessions_events" value="event_id" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERone;startArrow=ERmany;strokeColor=#455a64;" edge="1" parent="1" source="event_sessions" target="events">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ticket_types_sessions" value="event_session_id" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERone;startArrow=ERmany;strokeColor=#455a64;" edge="1" parent="1" source="ticket_types" target="event_sessions">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_res_items_res" value="reservation_id" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERone;startArrow=ERmany;strokeColor=#455a64;" edge="1" parent="1" source="ticket_reservation_items" target="ticket_reservations">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_res_items_ticket_types" value="ticket_type_id" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERone;startArrow=ERmany;strokeColor=#455a64;" edge="1" parent="1" source="ticket_reservation_items" target="ticket_types">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_orders_res" value="reservation_id UNIQUE" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERone;startArrow=ERone;strokeColor=#455a64;" edge="1" parent="1" source="checkout_orders" target="ticket_reservations">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_order_items_orders" value="order_id" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERone;startArrow=ERmany;strokeColor=#455a64;" edge="1" parent="1" source="checkout_order_items" target="checkout_orders">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_order_items_ticket_types" value="ticket_type_id" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERone;startArrow=ERmany;strokeColor=#455a64;" edge="1" parent="1" source="checkout_order_items" target="ticket_types">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_tickets_orders" value="order_id" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERone;startArrow=ERmany;strokeColor=#455a64;" edge="1" parent="1" source="tickets" target="checkout_orders">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_tickets_order_items" value="order_item_id" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERone;startArrow=ERmany;strokeColor=#455a64;" edge="1" parent="1" source="tickets" target="checkout_order_items">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_order_items_events_logical" value="event_id snapshot" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;dashed=1;strokeColor=#8d6e63;" edge="1" parent="1" source="checkout_order_items" target="events">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_order_items_sessions_logical" value="session_id snapshot" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;dashed=1;strokeColor=#8d6e63;" edge="1" parent="1" source="checkout_order_items" target="event_sessions">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_tickets_ticket_types_logical" value="ticket_type_id snapshot" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;dashed=1;strokeColor=#8d6e63;" edge="1" parent="1" source="tickets" target="ticket_types">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_tickets_events_logical" value="event_id snapshot" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;dashed=1;strokeColor=#8d6e63;" edge="1" parent="1" source="tickets" target="events">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_tickets_sessions_logical" value="session_id snapshot" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;dashed=1;strokeColor=#8d6e63;" edge="1" parent="1" source="tickets" target="event_sessions">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_tickets_checked_in_by_logical" value="checked_in_by_user_id logical" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;dashed=1;strokeColor=#8d6e63;" edge="1" parent="1" source="tickets" target="users">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

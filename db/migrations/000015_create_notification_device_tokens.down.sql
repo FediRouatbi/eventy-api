@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS notification_device_tokens;

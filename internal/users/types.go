@@ -10,6 +10,7 @@ type Profile struct {
 	ID          uuid.UUID  `json:"id"`
 	Name        string     `json:"name"`
 	Email       string     `json:"email"`
+	FirebaseUID *string    `json:"firebase_uid,omitempty"`
 	Role        string     `json:"role"`
 	OrganizerID *uuid.UUID `json:"organizer_id,omitempty"`
 	CreatedAt   time.Time  `json:"created_at"`
@@ -19,8 +20,4 @@ type Profile struct {
 type UpdateProfileInput struct {
 	Name  string `json:"name"`
 	Email string `json:"email"`
-}
-
-type DeleteAccountInput struct {
-	CurrentPassword string `json:"current_password"`
 }

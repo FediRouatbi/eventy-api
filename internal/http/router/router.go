@@ -9,6 +9,7 @@ import (
 	"eventy-api/internal/docs"
 	"eventy-api/internal/events"
 	"eventy-api/internal/http/middleware"
+	"eventy-api/internal/notifications"
 	"eventy-api/internal/platform/roles"
 	"eventy-api/internal/tickets"
 	"eventy-api/internal/users"
@@ -17,7 +18,7 @@ import (
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 )
 
-func New(adminsHandler *admins.Handler, authHandler *auth.Handler, categoriesHandler *categories.Handler, eventsHandler *events.Handler, ticketsHandler *tickets.Handler, usersHandler *users.Handler, authMiddleware *middleware.AuthMiddleware, corsMiddleware func(http.Handler) http.Handler) http.Handler {
+func New(adminsHandler *admins.Handler, authHandler *auth.Handler, categoriesHandler *categories.Handler, eventsHandler *events.Handler, notificationsHandler *notifications.Handler, ticketsHandler *tickets.Handler, usersHandler *users.Handler, authMiddleware *middleware.AuthMiddleware, corsMiddleware func(http.Handler) http.Handler) http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(chimiddleware.RequestID)
@@ -33,14 +34,9 @@ func New(adminsHandler *admins.Handler, authHandler *auth.Handler, categoriesHan
 		r.Post("/stripe/webhook", eventsHandler.StripeWebhook)
 
 		r.Route("/auth", func(r chi.Router) {
-			r.Post("/register", authHandler.Register)
-			r.Post("/register/resend-otp", authHandler.ResendRegisterOTP)
-			r.Post("/register/verify", authHandler.VerifyRegisterOTP)
-			r.Post("/forgot-password", authHandler.ForgotPassword)
-			r.Post("/reset-password", authHandler.ResetPassword)
-			r.Post("/login", authHandler.Login)
+			r.Post("/firebase/login", authHandler.LoginWithFirebase)
+			r.Post("/firebase/email-availability", authHandler.CheckFirebaseEmailAvailability)
 			r.Post("/refresh", authHandler.RefreshSession)
-			r.With(authMiddleware.RequireAuth).Patch("/change-password", authHandler.ChangePassword)
 			r.With(authMiddleware.RequireAuth).Post("/logout", authHandler.Logout)
 		})
 
@@ -72,6 +68,8 @@ func New(adminsHandler *admins.Handler, authHandler *auth.Handler, categoriesHan
 		r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin, roles.OrganizerAdmin)).Get("/tickets/code/{ticketCode}", ticketsHandler.GetByCode)
 		r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin, roles.OrganizerAdmin)).Post("/tickets/check-in", ticketsHandler.CheckInTicket)
 
+		r.With(authMiddleware.RequireAuth).Post("/notifications/device-tokens", notificationsHandler.RegisterDeviceToken)
+
 		r.Route("/admins", func(r chi.Router) {
 			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin, roles.OrganizerAdmin)).Get("/overview", adminsHandler.GetOverview)
 			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin, roles.OrganizerAdmin)).Get("/payments", adminsHandler.GetPayments)
@@ -85,7 +83,6 @@ func New(adminsHandler *admins.Handler, authHandler *auth.Handler, categoriesHan
 			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin)).Post("/organizers/{organizerID}/admins", adminsHandler.AddOrganizerAdmin)
 			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin)).Get("/organizers/{organizerID}/admins/{adminID}", adminsHandler.GetOrganizerAdmin)
 			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin)).Patch("/organizers/{organizerID}/admins/{adminID}", adminsHandler.UpdateOrganizerAdmin)
-			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin)).Patch("/organizers/{organizerID}/admins/{adminID}/password", adminsHandler.ResetOrganizerAdminPassword)
 			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin)).Delete("/organizers/{organizerID}/admins/{adminID}", adminsHandler.DeleteOrganizerAdmin)
 		})
 

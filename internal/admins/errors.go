@@ -9,7 +9,6 @@ var (
 	ErrInvalidAdminID         = errors.New("admin_id must be a valid uuid")
 	ErrInvalidAdminName       = errors.New("admin_name is required")
 	ErrInvalidAdminEmail      = errors.New("admin_email must be a valid email")
-	ErrInvalidAdminPassword   = errors.New("admin_password must be at least 8 characters")
 	ErrInvalidLimit           = errors.New("limit must be a positive integer")
 	ErrInvalidFromDate        = errors.New("from must be a valid date in YYYY-MM-DD format")
 	ErrInvalidToDate          = errors.New("to must be a valid date in YYYY-MM-DD format")

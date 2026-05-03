@@ -9,6 +9,7 @@ type User struct {
 	ID           string
 	Name         string
 	Email        string
+	FirebaseUID  sql.NullString
 	PasswordHash string
 	Role         string
 	OrganizerID  sql.NullString
@@ -20,6 +21,7 @@ type CreateUserParams struct {
 	ID           string
 	Name         string
 	Email        string
+	FirebaseUID  sql.NullString
 	PasswordHash string
 	Role         string
 	OrganizerID  sql.NullString

@@ -17,14 +17,6 @@ func validateUpdateProfileInput(input UpdateProfileInput) error {
 	return nil
 }
 
-func validateDeleteAccountInput(input DeleteAccountInput) error {
-	if strings.TrimSpace(input.CurrentPassword) == "" {
-		return ErrCurrentPasswordWrong
-	}
-
-	return nil
-}
-
 func isValidEmail(email string) bool {
 	_, err := mail.ParseAddress(strings.TrimSpace(email))
 	return err == nil

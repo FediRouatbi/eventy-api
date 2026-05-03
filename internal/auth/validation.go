@@ -2,104 +2,25 @@ package auth
 
 import (
 	"net/mail"
-	"regexp"
 	"strings"
 )
 
-var otpPattern = regexp.MustCompile(`^\d{4}$`)
-
-func validateRegisterInput(input RegisterInput) error {
-	if strings.TrimSpace(input.Name) == "" {
-		return ErrInvalidName
-	}
-
-	if len(strings.TrimSpace(input.Password)) < 8 {
-		return ErrInvalidPassword
-	}
-
-	if !isValidEmail(input.Email) {
-		return ErrInvalidEmail
-	}
-
-	return nil
-}
-
-func validateLoginInput(input LoginInput) error {
-	if !isValidEmail(input.Email) {
-		return ErrInvalidEmail
-	}
-
-	if strings.TrimSpace(input.Password) == "" {
-		return ErrInvalidCredentials
-	}
-
-	return nil
-}
-
-func validateGoogleLoginInput(input GoogleLoginInput) error {
+func validateFirebaseLoginInput(input FirebaseLoginInput) error {
 	if strings.TrimSpace(input.IDToken) == "" {
-		return ErrInvalidGoogleToken
+		return ErrInvalidFirebaseToken
 	}
 
 	switch strings.TrimSpace(input.Platform) {
 	case "android", "ios", "web":
 		return nil
 	default:
-		return ErrInvalidGoogleToken
+		return ErrInvalidFirebaseToken
 	}
 }
 
-func validateVerifyRegisterOTPInput(input VerifyRegisterOTPInput) error {
+func validateEmailAvailabilityInput(input EmailAvailabilityInput) error {
 	if !isValidEmail(input.Email) {
 		return ErrInvalidEmail
-	}
-
-	if !otpPattern.MatchString(strings.TrimSpace(input.OTP)) {
-		return ErrInvalidOTP
-	}
-
-	return nil
-}
-
-func validateResendRegisterOTPInput(input ResendRegisterOTPInput) error {
-	if !isValidEmail(input.Email) {
-		return ErrInvalidEmail
-	}
-
-	return nil
-}
-
-func validateForgotPasswordInput(input ForgotPasswordInput) error {
-	if !isValidEmail(input.Email) {
-		return ErrInvalidEmail
-	}
-
-	return nil
-}
-
-func validateResetPasswordInput(input ResetPasswordInput) error {
-	if !isValidEmail(input.Email) {
-		return ErrInvalidEmail
-	}
-
-	if !otpPattern.MatchString(strings.TrimSpace(input.Token)) {
-		return ErrInvalidOTP
-	}
-
-	if len(strings.TrimSpace(input.NewPassword)) < 8 {
-		return ErrInvalidPassword
-	}
-
-	return nil
-}
-
-func validateChangePasswordInput(input ChangePasswordInput) error {
-	if strings.TrimSpace(input.CurrentPassword) == "" {
-		return ErrCurrentPasswordWrong
-	}
-
-	if len(strings.TrimSpace(input.NewPassword)) < 8 {
-		return ErrInvalidPassword
 	}
 
 	return nil

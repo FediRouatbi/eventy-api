@@ -1,0 +1,321 @@
+<mxfile host="app.diagrams.net" agent="Codex">
+  <diagram id="eventy-clean-uml-erd" name="Eventy Clean UML ERD">
+    <mxGraphModel dx="4649" dy="2411" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="2200" pageHeight="1400" background="light-dark(#E4E4E4,#FFFFFF)" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontColor=#FFFFFF;fontSize=26;fontStyle=1;labelBackgroundColor=none;" value="Eventy Database Tables and Relations" vertex="1">
+          <mxGeometry height="36" width="760" x="70" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontColor=#FFFFFF;fontSize=12;labelBackgroundColor=none;" value="Clean UML-style ERD. Tables show key columns only. Lines are routed around table bodies." vertex="1">
+          <mxGeometry height="24" width="820" x="70" y="78" as="geometry" />
+        </mxCell>
+        <mxCell id="lane_identity" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=12;fontStyle=1;align=left;verticalAlign=middle;labelBackgroundColor=none;" value="IDENTITY" vertex="1">
+          <mxGeometry height="22" width="260" x="80" y="122" as="geometry" />
+        </mxCell>
+        <mxCell id="lane_catalog" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=12;fontStyle=1;align=left;verticalAlign=middle;labelBackgroundColor=none;" value="EVENT CATALOG" vertex="1">
+          <mxGeometry height="22" width="320" x="520" y="122" as="geometry" />
+        </mxCell>
+        <mxCell id="lane_checkout" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=12;fontStyle=1;align=left;verticalAlign=middle;labelBackgroundColor=none;" value="CHECKOUT FLOW" vertex="1">
+          <mxGeometry height="22" width="320" x="1040" y="122" as="geometry" />
+        </mxCell>
+        <mxCell id="lane_tickets" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=12;fontStyle=1;align=left;verticalAlign=middle;labelBackgroundColor=none;" value="ORDER AND TICKETS" vertex="1">
+          <mxGeometry height="22" width="360" x="1530" y="122" as="geometry" />
+        </mxCell>
+        <mxCell id="users" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#182E3E;strokeColor=#FFFFFF;strokeWidth=1;labelBackgroundColor=none;fontColor=#FFFFFF;" value="" vertex="1">
+          <mxGeometry height="180" width="330" x="80" y="155" as="geometry" />
+        </mxCell>
+        <mxCell id="users_header" parent="users" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=12;fontStyle=1;align=center;verticalAlign=middle;labelBackgroundColor=none;" value="users" vertex="1">
+          <mxGeometry height="25" width="330" y="3" as="geometry" />
+        </mxCell>
+        <mxCell id="users_rule" parent="users" style="shape=line;html=1;strokeColor=#FFFFFF;strokeWidth=1;labelBackgroundColor=none;fillColor=#182E3E;fontColor=#FFFFFF;" value="" vertex="1">
+          <mxGeometry height="10" width="330" y="31" as="geometry" />
+        </mxCell>
+        <mxCell id="users_fields" parent="users" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=12;align=left;verticalAlign=top;spacing=10;whiteSpace=wrap;labelBackgroundColor=none;" value="+ id: CHAR(36) PK&#xa;+ firebase_uid: VARCHAR(128) UNIQUE&#xa;+ email: VARCHAR(255) UNIQUE&#xa;+ name: VARCHAR(120)&#xa;+ role: VARCHAR(20)&#xa;+ organizer_id: CHAR(36) FK NULL" vertex="1">
+          <mxGeometry height="135" width="330" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="organizers" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#182E3E;strokeColor=#FFFFFF;strokeWidth=1;labelBackgroundColor=none;fontColor=#FFFFFF;" value="" vertex="1">
+          <mxGeometry height="120" width="310" x="520" y="155" as="geometry" />
+        </mxCell>
+        <mxCell id="organizers_header" parent="organizers" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=12;fontStyle=1;align=center;verticalAlign=middle;labelBackgroundColor=none;" value="organizers" vertex="1">
+          <mxGeometry height="25" width="310" y="3" as="geometry" />
+        </mxCell>
+        <mxCell id="organizers_rule" parent="organizers" style="shape=line;html=1;strokeColor=#FFFFFF;strokeWidth=1;labelBackgroundColor=none;fillColor=#182E3E;fontColor=#FFFFFF;" value="" vertex="1">
+          <mxGeometry height="10" width="310" y="31" as="geometry" />
+        </mxCell>
+        <mxCell id="organizers_fields" parent="organizers" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=12;align=left;verticalAlign=top;spacing=10;whiteSpace=wrap;labelBackgroundColor=none;" value="+ id: CHAR(36) PK&#xa;+ name: VARCHAR(150)&#xa;+ slug: VARCHAR(180) UNIQUE" vertex="1">
+          <mxGeometry height="75" width="310" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="categories" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#182E3E;strokeColor=#FFFFFF;strokeWidth=1;labelBackgroundColor=none;fontColor=#FFFFFF;" value="" vertex="1">
+          <mxGeometry height="120" width="310" x="930" y="155" as="geometry" />
+        </mxCell>
+        <mxCell id="categories_header" parent="categories" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=12;fontStyle=1;align=center;verticalAlign=middle;labelBackgroundColor=none;" value="categories" vertex="1">
+          <mxGeometry height="25" width="310" y="3" as="geometry" />
+        </mxCell>
+        <mxCell id="categories_rule" parent="categories" style="shape=line;html=1;strokeColor=#FFFFFF;strokeWidth=1;labelBackgroundColor=none;fillColor=#182E3E;fontColor=#FFFFFF;" value="" vertex="1">
+          <mxGeometry height="10" width="310" y="31" as="geometry" />
+        </mxCell>
+        <mxCell id="categories_fields" parent="categories" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=12;align=left;verticalAlign=top;spacing=10;whiteSpace=wrap;labelBackgroundColor=none;" value="+ id: CHAR(36) PK&#xa;+ name: VARCHAR(120) UNIQUE&#xa;+ slug: VARCHAR(140) UNIQUE" vertex="1">
+          <mxGeometry height="75" width="310" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="auth_sessions" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#182E3E;strokeColor=#FFFFFF;strokeWidth=1;labelBackgroundColor=none;fontColor=#FFFFFF;" value="" vertex="1">
+          <mxGeometry height="160" width="330" x="80" y="430" as="geometry" />
+        </mxCell>
+        <mxCell id="auth_sessions_header" parent="auth_sessions" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=12;fontStyle=1;align=center;verticalAlign=middle;labelBackgroundColor=none;" value="auth_sessions" vertex="1">
+          <mxGeometry height="25" width="330" y="3" as="geometry" />
+        </mxCell>
+        <mxCell id="auth_sessions_rule" parent="auth_sessions" style="shape=line;html=1;strokeColor=#FFFFFF;strokeWidth=1;labelBackgroundColor=none;fillColor=#182E3E;fontColor=#FFFFFF;" value="" vertex="1">
+          <mxGeometry height="10" width="330" y="31" as="geometry" />
+        </mxCell>
+        <mxCell id="auth_sessions_fields" parent="auth_sessions" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=12;align=left;verticalAlign=top;spacing=10;whiteSpace=wrap;labelBackgroundColor=none;" value="+ id: CHAR(36) PK&#xa;+ user_id: CHAR(36) FK&#xa;+ refresh_token_hash: VARCHAR(255) UNIQUE&#xa;+ expires_at: TIMESTAMP&#xa;+ revoked_at: TIMESTAMP NULL" vertex="1">
+          <mxGeometry height="115" width="330" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="events" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#182E3E;strokeColor=#FFFFFF;strokeWidth=1;labelBackgroundColor=none;fontColor=#FFFFFF;" value="" vertex="1">
+          <mxGeometry height="220" width="350" x="520" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="events_header" parent="events" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=12;fontStyle=1;align=center;verticalAlign=middle;labelBackgroundColor=none;" value="events" vertex="1">
+          <mxGeometry height="25" width="350" y="3" as="geometry" />
+        </mxCell>
+        <mxCell id="events_rule" parent="events" style="shape=line;html=1;strokeColor=#FFFFFF;strokeWidth=1;labelBackgroundColor=none;fillColor=#182E3E;fontColor=#FFFFFF;" value="" vertex="1">
+          <mxGeometry height="10" width="350" y="31" as="geometry" />
+        </mxCell>
+        <mxCell id="events_fields" parent="events" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=12;align=left;verticalAlign=top;spacing=10;whiteSpace=wrap;labelBackgroundColor=none;" value="+ id: CHAR(36) PK&#xa;+ organizer_id: CHAR(36) FK&#xa;+ category_id: CHAR(36) FK&#xa;+ title: VARCHAR(180)&#xa;+ status: VARCHAR(40)&#xa;+ city: VARCHAR(120)&#xa;+ country: VARCHAR(120)&#xa;+ currency: VARCHAR(10)" vertex="1">
+          <mxGeometry height="175" width="350" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="reservations" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#182E3E;strokeColor=#FFFFFF;strokeWidth=1;labelBackgroundColor=none;fontColor=#FFFFFF;" value="" vertex="1">
+          <mxGeometry height="170" width="330" x="1040" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="reservations_header" parent="reservations" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=12;fontStyle=1;align=center;verticalAlign=middle;labelBackgroundColor=none;" value="ticket_reservations" vertex="1">
+          <mxGeometry height="25" width="330" y="3" as="geometry" />
+        </mxCell>
+        <mxCell id="reservations_rule" parent="reservations" style="shape=line;html=1;strokeColor=#FFFFFF;strokeWidth=1;labelBackgroundColor=none;fillColor=#182E3E;fontColor=#FFFFFF;" value="" vertex="1">
+          <mxGeometry height="10" width="330" y="31" as="geometry" />
+        </mxCell>
+        <mxCell id="reservations_fields" parent="reservations" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=12;align=left;verticalAlign=top;spacing=10;whiteSpace=wrap;labelBackgroundColor=none;" value="+ id: CHAR(36) PK&#xa;+ user_id: CHAR(36) FK NULL&#xa;+ customer_email: VARCHAR(255)&#xa;+ status: VARCHAR(40)&#xa;+ expires_at: TIMESTAMP" vertex="1">
+          <mxGeometry height="125" width="330" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="orders" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#182E3E;strokeColor=#FFFFFF;strokeWidth=1;labelBackgroundColor=none;fontColor=#FFFFFF;" value="" vertex="1">
+          <mxGeometry height="210" width="350" x="1530" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="orders_header" parent="orders" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=12;fontStyle=1;align=center;verticalAlign=middle;labelBackgroundColor=none;" value="checkout_orders" vertex="1">
+          <mxGeometry height="25" width="350" y="3" as="geometry" />
+        </mxCell>
+        <mxCell id="orders_rule" parent="orders" style="shape=line;html=1;strokeColor=#FFFFFF;strokeWidth=1;labelBackgroundColor=none;fillColor=#182E3E;fontColor=#FFFFFF;" value="" vertex="1">
+          <mxGeometry height="10" width="350" y="31" as="geometry" />
+        </mxCell>
+        <mxCell id="orders_fields" parent="orders" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=12;align=left;verticalAlign=top;spacing=10;whiteSpace=wrap;labelBackgroundColor=none;" value="+ id: CHAR(36) PK&#xa;+ reservation_id: CHAR(36) UNIQUE&#xa;+ stripe_session_id: VARCHAR(255) UNIQUE&#xa;+ buyer_email: VARCHAR(255)&#xa;+ status: VARCHAR(40)&#xa;+ total_cents: INT&#xa;+ mobile_deeplink_token: VARCHAR(255) UNIQUE NULL" vertex="1">
+          <mxGeometry height="165" width="350" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="devices" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#182E3E;strokeColor=#FFFFFF;strokeWidth=1;labelBackgroundColor=none;fontColor=#FFFFFF;" value="" vertex="1">
+          <mxGeometry height="160" width="330" x="80" y="700" as="geometry" />
+        </mxCell>
+        <mxCell id="devices_header" parent="devices" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=12;fontStyle=1;align=center;verticalAlign=middle;labelBackgroundColor=none;" value="notification_device_tokens" vertex="1">
+          <mxGeometry height="25" width="330" y="3" as="geometry" />
+        </mxCell>
+        <mxCell id="devices_rule" parent="devices" style="shape=line;html=1;strokeColor=#FFFFFF;strokeWidth=1;labelBackgroundColor=none;fillColor=#182E3E;fontColor=#FFFFFF;" value="" vertex="1">
+          <mxGeometry height="10" width="330" y="31" as="geometry" />
+        </mxCell>
+        <mxCell id="devices_fields" parent="devices" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=12;align=left;verticalAlign=top;spacing=10;whiteSpace=wrap;labelBackgroundColor=none;" value="+ id: CHAR(36) PK&#xa;+ user_id: CHAR(36) FK&#xa;+ token: VARCHAR(512) UNIQUE&#xa;+ provider: VARCHAR(20)&#xa;+ platform: VARCHAR(20)" vertex="1">
+          <mxGeometry height="115" width="330" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="sessions" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#182E3E;strokeColor=#FFFFFF;strokeWidth=1;labelBackgroundColor=none;fontColor=#FFFFFF;" value="" vertex="1">
+          <mxGeometry height="160" width="350" x="520" y="720" as="geometry" />
+        </mxCell>
+        <mxCell id="sessions_header" parent="sessions" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=12;fontStyle=1;align=center;verticalAlign=middle;labelBackgroundColor=none;" value="event_sessions" vertex="1">
+          <mxGeometry height="25" width="350" y="3" as="geometry" />
+        </mxCell>
+        <mxCell id="sessions_rule" parent="sessions" style="shape=line;html=1;strokeColor=#FFFFFF;strokeWidth=1;labelBackgroundColor=none;fillColor=#182E3E;fontColor=#FFFFFF;" value="" vertex="1">
+          <mxGeometry height="10" width="350" y="31" as="geometry" />
+        </mxCell>
+        <mxCell id="sessions_fields" parent="sessions" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=12;align=left;verticalAlign=top;spacing=10;whiteSpace=wrap;labelBackgroundColor=none;" value="+ id: CHAR(36) PK&#xa;+ event_id: CHAR(36) FK&#xa;+ starts_at: TIMESTAMP&#xa;+ ends_at: TIMESTAMP&#xa;+ sales_start_at: TIMESTAMP NULL&#xa;+ sales_end_at: TIMESTAMP NULL" vertex="1">
+          <mxGeometry height="115" width="350" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="reservation_items" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#182E3E;strokeColor=#FFFFFF;strokeWidth=1;labelBackgroundColor=none;fontColor=#FFFFFF;" value="" vertex="1">
+          <mxGeometry height="150" width="330" x="1040" y="720" as="geometry" />
+        </mxCell>
+        <mxCell id="reservation_items_header" parent="reservation_items" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=12;fontStyle=1;align=center;verticalAlign=middle;labelBackgroundColor=none;" value="ticket_reservation_items" vertex="1">
+          <mxGeometry height="25" width="330" y="3" as="geometry" />
+        </mxCell>
+        <mxCell id="reservation_items_rule" parent="reservation_items" style="shape=line;html=1;strokeColor=#FFFFFF;strokeWidth=1;labelBackgroundColor=none;fillColor=#182E3E;fontColor=#FFFFFF;" value="" vertex="1">
+          <mxGeometry height="10" width="330" y="31" as="geometry" />
+        </mxCell>
+        <mxCell id="reservation_items_fields" parent="reservation_items" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=12;align=left;verticalAlign=top;spacing=10;whiteSpace=wrap;labelBackgroundColor=none;" value="+ id: CHAR(36) PK&#xa;+ reservation_id: CHAR(36) FK&#xa;+ ticket_type_id: CHAR(36) FK&#xa;+ quantity: INT&#xa;+ unit_price_cents: INT" vertex="1">
+          <mxGeometry height="105" width="330" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="order_items" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#182E3E;strokeColor=#FFFFFF;strokeWidth=1;labelBackgroundColor=none;fontColor=#FFFFFF;" value="" vertex="1">
+          <mxGeometry height="185" width="350" x="1530" y="720" as="geometry" />
+        </mxCell>
+        <mxCell id="order_items_header" parent="order_items" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=12;fontStyle=1;align=center;verticalAlign=middle;labelBackgroundColor=none;" value="checkout_order_items" vertex="1">
+          <mxGeometry height="25" width="350" y="3" as="geometry" />
+        </mxCell>
+        <mxCell id="order_items_rule" parent="order_items" style="shape=line;html=1;strokeColor=#FFFFFF;strokeWidth=1;labelBackgroundColor=none;fillColor=#182E3E;fontColor=#FFFFFF;" value="" vertex="1">
+          <mxGeometry height="10" width="350" y="31" as="geometry" />
+        </mxCell>
+        <mxCell id="order_items_fields" parent="order_items" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=12;align=left;verticalAlign=top;spacing=10;whiteSpace=wrap;labelBackgroundColor=none;" value="+ id: CHAR(36) PK&#xa;+ order_id: CHAR(36) FK&#xa;+ ticket_type_id: CHAR(36) FK&#xa;+ event_id: CHAR(36) snapshot&#xa;+ session_id: CHAR(36) snapshot&#xa;+ quantity: INT" vertex="1">
+          <mxGeometry height="140" width="350" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="ticket_types" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#182E3E;strokeColor=#FFFFFF;strokeWidth=1;labelBackgroundColor=none;fontColor=#FFFFFF;" value="" vertex="1">
+          <mxGeometry height="170" width="350" x="520" y="1010" as="geometry" />
+        </mxCell>
+        <mxCell id="ticket_types_header" parent="ticket_types" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=12;fontStyle=1;align=center;verticalAlign=middle;labelBackgroundColor=none;" value="ticket_types" vertex="1">
+          <mxGeometry height="25" width="350" y="3" as="geometry" />
+        </mxCell>
+        <mxCell id="ticket_types_rule" parent="ticket_types" style="shape=line;html=1;strokeColor=#FFFFFF;strokeWidth=1;labelBackgroundColor=none;fillColor=#182E3E;fontColor=#FFFFFF;" value="" vertex="1">
+          <mxGeometry height="10" width="350" y="31" as="geometry" />
+        </mxCell>
+        <mxCell id="ticket_types_fields" parent="ticket_types" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=12;align=left;verticalAlign=top;spacing=10;whiteSpace=wrap;labelBackgroundColor=none;" value="+ id: CHAR(36) PK&#xa;+ session_id: CHAR(36) FK&#xa;+ name: VARCHAR(120)&#xa;+ price_cents: INT&#xa;+ capacity: INT&#xa;+ max_per_order: INT" vertex="1">
+          <mxGeometry height="125" width="350" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="tickets" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#182E3E;strokeColor=#FFFFFF;strokeWidth=1;labelBackgroundColor=none;fontColor=#FFFFFF;" value="" vertex="1">
+          <mxGeometry height="185" width="350" x="1530" y="1010" as="geometry" />
+        </mxCell>
+        <mxCell id="tickets_header" parent="tickets" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=12;fontStyle=1;align=center;verticalAlign=middle;labelBackgroundColor=none;" value="tickets" vertex="1">
+          <mxGeometry height="25" width="350" y="3" as="geometry" />
+        </mxCell>
+        <mxCell id="tickets_rule" parent="tickets" style="shape=line;html=1;strokeColor=#FFFFFF;strokeWidth=1;labelBackgroundColor=none;fillColor=#182E3E;fontColor=#FFFFFF;" value="" vertex="1">
+          <mxGeometry height="10" width="350" y="31" as="geometry" />
+        </mxCell>
+        <mxCell id="tickets_fields" parent="tickets" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=12;align=left;verticalAlign=top;spacing=10;whiteSpace=wrap;labelBackgroundColor=none;" value="+ id: CHAR(36) PK&#xa;+ order_id: CHAR(36) FK&#xa;+ order_item_id: CHAR(36) FK&#xa;+ code: VARCHAR(64) UNIQUE&#xa;+ holder_email: VARCHAR(255)&#xa;+ status: VARCHAR(40)&#xa;+ checked_in_by: CHAR(36) NULL" vertex="1">
+          <mxGeometry height="140" width="350" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="legacy_note" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#182E3E;strokeColor=#FFFFFF;fontColor=#FFFFFF;fontSize=12;align=center;verticalAlign=middle;labelBackgroundColor=none;" value="Legacy auth tables removed&#xa;pending_registrations&#xa;password_reset_tokens" vertex="1">
+          <mxGeometry height="105" width="210" x="1920" y="790" as="geometry" />
+        </mxCell>
+        <mxCell id="e_user_org" edge="1" parent="1" source="users" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#23445D;strokeWidth=1;exitX=1;exitY=0.22;entryX=0;entryY=0.5;labelBackgroundColor=none;fontColor=default;" target="organizers" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_user_auth" edge="1" parent="1" source="users" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#23445D;strokeWidth=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;labelBackgroundColor=none;fontColor=default;" target="auth_sessions" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_user_devices" edge="1" parent="1" source="users" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#23445D;strokeWidth=1;exitX=0;exitY=0.65;entryX=0;entryY=0.5;labelBackgroundColor=none;fontColor=default;" target="devices" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="45" y="272" />
+              <mxPoint x="45" y="780" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_org_events" edge="1" parent="1" source="organizers" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#23445D;strokeWidth=1;exitX=0.5;exitY=1;entryX=0.32;entryY=0;labelBackgroundColor=none;fontColor=default;" target="events" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_cat_events" edge="1" parent="1" source="categories" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#23445D;strokeWidth=1;exitX=0.5;exitY=1;entryX=1;entryY=0.18;labelBackgroundColor=none;fontColor=default;" target="events" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1085" y="340" />
+              <mxPoint x="900" y="340" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_events_sessions" edge="1" parent="1" source="events" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#23445D;strokeWidth=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;labelBackgroundColor=none;fontColor=default;" target="sessions" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_sessions_ticket_types" edge="1" parent="1" source="sessions" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#23445D;strokeWidth=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;labelBackgroundColor=none;fontColor=default;" target="ticket_types" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_user_reservations" edge="1" parent="1" source="users" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#23445D;strokeWidth=1;exitX=1;exitY=0.08;entryX=0.5;entryY=0;labelBackgroundColor=none;fontColor=default;" target="reservations" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="455" y="110" />
+              <mxPoint x="1205" y="110" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_reservation_items" edge="1" parent="1" source="reservations" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#23445D;strokeWidth=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;labelBackgroundColor=none;fontColor=default;" target="reservation_items" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_res_items_ticket_type" edge="1" parent="1" source="reservation_items" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#23445D;strokeWidth=1;exitX=0;exitY=0.65;entryX=1;entryY=0.35;labelBackgroundColor=none;fontColor=default;" target="ticket_types" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="960" y="818" />
+              <mxPoint x="960" y="1070" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_res_order" edge="1" parent="1" source="reservations" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#23445D;strokeWidth=1;exitX=1;exitY=0.42;entryX=0;entryY=0.42;labelBackgroundColor=none;fontColor=default;" target="orders" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_order_items" edge="1" parent="1" source="orders" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#23445D;strokeWidth=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;labelBackgroundColor=none;fontColor=default;" target="order_items" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_order_items_ticket_type" edge="1" parent="1" source="order_items" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#23445D;strokeWidth=1;exitX=0;exitY=0.4;entryX=1;entryY=0.7;labelBackgroundColor=none;fontColor=default;" target="ticket_types" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1530" y="990" />
+              <mxPoint x="975" y="990" />
+              <mxPoint x="975" y="1130" />
+              <mxPoint x="870" y="1130" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_order_items_tickets" edge="1" parent="1" source="order_items" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#23445D;strokeWidth=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;labelBackgroundColor=none;fontColor=default;" target="tickets" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_orders_tickets" edge="1" parent="1" source="orders" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#23445D;strokeWidth=1;exitX=1;exitY=0.3;entryX=1;entryY=0.3;labelBackgroundColor=none;fontColor=default;" target="tickets" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1925" y="453" />
+              <mxPoint x="1925" y="1065" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_ticket_checkin_user" edge="1" parent="1" source="tickets" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=open;endFill=0;strokeColor=#23445D;strokeWidth=1;exitX=0.5;exitY=1;entryX=0;entryY=0.5;labelBackgroundColor=none;fontColor=default;" target="users" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1705" y="1285" />
+              <mxPoint x="40" y="1285" />
+              <mxPoint x="40" y="245" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="l_user_org" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=10;align=center;verticalAlign=middle;labelBackgroundColor=none;" value="belongs to&#xa;* to 1" vertex="1">
+          <mxGeometry height="34" width="82" x="420" y="188" as="geometry" />
+        </mxCell>
+        <mxCell id="l_user_auth" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=10;align=center;verticalAlign=middle;labelBackgroundColor=none;" value="has sessions&#xa;1 to *" vertex="1">
+          <mxGeometry height="34" width="84" x="238" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="l_user_devices" parent="1" style="text;html=1;fontSize=10;align=center;verticalAlign=middle;labelBackgroundColor=none;fontColor=#FFFFFF;" value="registers devices&#xa;1 to *" vertex="1">
+          <mxGeometry height="34" width="110" x="50" y="615" as="geometry" />
+        </mxCell>
+        <mxCell id="l_org_events" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=10;align=center;verticalAlign=middle;labelBackgroundColor=none;" value="creates&#xa;1 to *" vertex="1">
+          <mxGeometry height="34" width="82" x="626" y="308" as="geometry" />
+        </mxCell>
+        <mxCell id="l_cat_events" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=10;align=center;verticalAlign=middle;labelBackgroundColor=none;" value="classified by&#xa;1 to *" vertex="1">
+          <mxGeometry height="34" width="92" x="930" y="306" as="geometry" />
+        </mxCell>
+        <mxCell id="l_event_sessions" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=10;align=center;verticalAlign=middle;labelBackgroundColor=none;" value="has sessions&#xa;1 to *" vertex="1">
+          <mxGeometry height="34" width="90" x="650" y="640" as="geometry" />
+        </mxCell>
+        <mxCell id="l_session_types" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=10;align=center;verticalAlign=middle;labelBackgroundColor=none;" value="sells types&#xa;1 to *" vertex="1">
+          <mxGeometry height="34" width="82" x="650" y="920" as="geometry" />
+        </mxCell>
+        <mxCell id="l_user_reservations" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=10;align=center;verticalAlign=middle;labelBackgroundColor=none;" value="starts reservation&#xa;1 to *" vertex="1">
+          <mxGeometry height="34" width="112" x="780" y="82" as="geometry" />
+        </mxCell>
+        <mxCell id="l_res_items" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=10;align=center;verticalAlign=middle;labelBackgroundColor=none;" value="contains&#xa;1 to *" vertex="1">
+          <mxGeometry height="34" width="82" x="1170" y="612" as="geometry" />
+        </mxCell>
+        <mxCell id="l_res_items_type" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=10;align=center;verticalAlign=middle;labelBackgroundColor=none;" value="reserves&#xa;* to 1" vertex="1">
+          <mxGeometry height="34" width="82" x="905" y="920" as="geometry" />
+        </mxCell>
+        <mxCell id="l_res_order" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=10;align=center;verticalAlign=middle;labelBackgroundColor=none;" value="becomes order&#xa;1 to 1" vertex="1">
+          <mxGeometry height="34" width="104" x="1386" y="438" as="geometry" />
+        </mxCell>
+        <mxCell id="l_order_items" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=10;align=center;verticalAlign=middle;labelBackgroundColor=none;" value="contains&#xa;1 to *" vertex="1">
+          <mxGeometry height="34" width="82" x="1665" y="628" as="geometry" />
+        </mxCell>
+        <mxCell id="l_order_item_type" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=10;align=center;verticalAlign=middle;labelBackgroundColor=none;" value="priced from&#xa;* to 1" vertex="1">
+          <mxGeometry height="34" width="92" x="1000" y="955" as="geometry" />
+        </mxCell>
+        <mxCell id="l_order_item_ticket" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=10;align=center;verticalAlign=middle;labelBackgroundColor=none;" value="generates&#xa;1 to *" vertex="1">
+          <mxGeometry height="34" width="86" x="1662" y="934" as="geometry" />
+        </mxCell>
+        <mxCell id="l_order_ticket" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=10;align=center;verticalAlign=middle;labelBackgroundColor=none;" value="issues&#xa;1 to *" vertex="1">
+          <mxGeometry height="34" width="82" x="1930" y="760" as="geometry" />
+        </mxCell>
+        <mxCell id="l_ticket_checkin" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontColor=#FFFFFF;fontSize=10;align=center;verticalAlign=middle;labelBackgroundColor=none;" value="checked in by&#xa;* to 0..1" vertex="1">
+          <mxGeometry height="34" width="100" x="55" y="1195" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -9,7 +9,6 @@ import (
 	"eventy-api/internal/platform/db/sqlc"
 
 	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type Repository struct {
@@ -49,11 +48,21 @@ func (r *Repository) GetProfileByID(ctx context.Context, userID uuid.UUID) (Prof
 		ID:          parsedUserID,
 		Name:        dbUser.Name,
 		Email:       dbUser.Email,
+		FirebaseUID: nullableStringPtr(dbUser.FirebaseUID),
 		Role:        dbUser.Role,
 		OrganizerID: organizerID,
 		CreatedAt:   dbUser.CreatedAt,
 		UpdatedAt:   dbUser.UpdatedAt,
 	}, nil
+}
+
+func nullableStringPtr(value sql.NullString) *string {
+	if !value.Valid || strings.TrimSpace(value.String) == "" {
+		return nil
+	}
+
+	result := value.String
+	return &result
 }
 
 func (r *Repository) UpdateProfile(ctx context.Context, userID uuid.UUID, input UpdateProfileInput) (Profile, error) {
@@ -80,18 +89,9 @@ func (r *Repository) UpdateProfile(ctx context.Context, userID uuid.UUID, input 
 	return r.GetProfileByID(ctx, userID)
 }
 
-func (r *Repository) DeleteProfileWithPassword(ctx context.Context, userID uuid.UUID, input DeleteAccountInput) error {
-	dbUser, err := r.queries.GetUserByID(ctx, userID.String())
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return ErrUserNotFound
-		}
-
+func (r *Repository) DeleteProfile(ctx context.Context, userID uuid.UUID) error {
+	if _, err := r.GetProfileByID(ctx, userID); err != nil {
 		return err
-	}
-
-	if bcrypt.CompareHashAndPassword([]byte(dbUser.PasswordHash), []byte(strings.TrimSpace(input.CurrentPassword))) != nil {
-		return ErrCurrentPasswordWrong
 	}
 
 	return r.queries.DeleteUserByID(ctx, userID.String())

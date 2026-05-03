@@ -84,22 +84,11 @@ func (h *Handler) DeleteMe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var input DeleteAccountInput
-	decoder := json.NewDecoder(r.Body)
-	decoder.DisallowUnknownFields()
-
-	if err := decoder.Decode(&input); err != nil {
-		responses.WriteError(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
-
-	err := h.service.DeleteProfileWithPassword(r.Context(), claims.UserID, input)
+	err := h.service.DeleteProfile(r.Context(), claims.UserID)
 	if err != nil {
 		logger.RequestError(r, "users.delete_me", err)
 
 		switch {
-		case errors.Is(err, ErrCurrentPasswordWrong):
-			responses.WriteError(w, http.StatusBadRequest, err.Error())
 		case errors.Is(err, ErrUserNotFound):
 			responses.WriteError(w, http.StatusNotFound, err.Error())
 		default:

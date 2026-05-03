@@ -11,7 +11,6 @@ type CreateOrganizerAdminInput struct {
 	OrganizerSlug string `json:"organizer_slug"`
 	AdminName     string `json:"admin_name"`
 	AdminEmail    string `json:"admin_email"`
-	AdminPassword string `json:"admin_password"`
 }
 
 type UpdateOrganizerInput struct {
@@ -25,13 +24,8 @@ type UpdateOrganizerAdminInput struct {
 }
 
 type AddOrganizerAdminInput struct {
-	AdminName     string `json:"admin_name"`
-	AdminEmail    string `json:"admin_email"`
-	AdminPassword string `json:"admin_password"`
-}
-
-type ResetOrganizerAdminPasswordInput struct {
-	Password string `json:"password"`
+	AdminName  string `json:"admin_name"`
+	AdminEmail string `json:"admin_email"`
 }
 
 type Organizer struct {

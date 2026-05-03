@@ -95,6 +95,8 @@ type CreateCheckoutOrderInput struct {
 
 type CreateStripeCheckoutSessionInput struct {
 	OrderToken string `json:"order_token"`
+	SuccessURL string `json:"success_url"`
+	CancelURL  string `json:"cancel_url"`
 }
 
 type StripeCheckoutSessionResponse struct {

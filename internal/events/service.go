@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -205,12 +206,32 @@ func (s *Service) GetCheckoutOrder(ctx context.Context, orderID uuid.UUID, order
 	return s.repository.GetCheckoutOrder(ctx, orderID, orderToken)
 }
 
-func (s *Service) CreateStripeCheckoutSession(ctx context.Context, orderID uuid.UUID, orderToken string) (StripeCheckoutSessionResponse, error) {
+func (s *Service) CreateStripeCheckoutSession(ctx context.Context, orderID uuid.UUID, input CreateStripeCheckoutSessionInput) (StripeCheckoutSessionResponse, error) {
 	if strings.TrimSpace(s.stripeCfg.SecretKey) == "" || strings.TrimSpace(s.stripeCfg.SuccessURL) == "" || strings.TrimSpace(s.stripeCfg.CancelURL) == "" {
 		return StripeCheckoutSessionResponse{}, ErrStripeNotConfigured
 	}
 
-	order, err := s.repository.GetCheckoutOrder(ctx, orderID, orderToken)
+	input.OrderToken = strings.TrimSpace(input.OrderToken)
+	input.SuccessURL = strings.TrimSpace(input.SuccessURL)
+	input.CancelURL = strings.TrimSpace(input.CancelURL)
+
+	successURL := s.stripeCfg.SuccessURL
+	if input.SuccessURL != "" {
+		if err := validateCheckoutRedirectURL(input.SuccessURL); err != nil {
+			return StripeCheckoutSessionResponse{}, err
+		}
+		successURL = input.SuccessURL
+	}
+
+	cancelURL := s.stripeCfg.CancelURL
+	if input.CancelURL != "" {
+		if err := validateCheckoutRedirectURL(input.CancelURL); err != nil {
+			return StripeCheckoutSessionResponse{}, err
+		}
+		cancelURL = input.CancelURL
+	}
+
+	order, err := s.repository.GetCheckoutOrder(ctx, orderID, input.OrderToken)
 	if err != nil {
 		return StripeCheckoutSessionResponse{}, err
 	}
@@ -219,7 +240,7 @@ func (s *Service) CreateStripeCheckoutSession(ctx context.Context, orderID uuid.
 		return StripeCheckoutSessionResponse{}, ErrCheckoutOrderNotPayable
 	}
 
-	session, err := s.repository.CreateStripeCheckoutSession(ctx, s.stripeCfg.SecretKey, s.stripeCfg.SuccessURL, s.stripeCfg.CancelURL, order)
+	session, err := s.repository.CreateStripeCheckoutSession(ctx, s.stripeCfg.SecretKey, successURL, cancelURL, order)
 	if err != nil {
 		return StripeCheckoutSessionResponse{}, err
 	}
@@ -231,6 +252,25 @@ func (s *Service) CreateStripeCheckoutSession(ctx context.Context, orderID uuid.
 		OrderNumber: order.OrderNumber,
 		ExpiresAt:   order.ExpiresAt.Format(time.RFC3339),
 	}, nil
+}
+
+func validateCheckoutRedirectURL(rawURL string) error {
+	parsed, err := url.Parse(strings.TrimSpace(rawURL))
+	if err != nil {
+		return ErrInvalidCheckoutRedirectURL
+	}
+
+	switch parsed.Scheme {
+	case "http", "https", "eventy-mobile":
+	default:
+		return ErrInvalidCheckoutRedirectURL
+	}
+
+	if (parsed.Scheme == "http" || parsed.Scheme == "https") && strings.TrimSpace(parsed.Host) == "" {
+		return ErrInvalidCheckoutRedirectURL
+	}
+
+	return nil
 }
 
 func (s *Service) GetCheckoutOrderByStripeSessionID(ctx context.Context, stripeSessionID string) (CheckoutOrderSummary, error) {

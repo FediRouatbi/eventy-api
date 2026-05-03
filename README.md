@@ -19,8 +19,10 @@ Frontend and mobile can use `/openapi.json` to generate typed API clients.
 - auth forgot password
 - auth reset password
 - auth login
+- auth Google login
 - auth refresh session
 - auth logout
+- notification device-token registration
 - role guards foundation
 - organizer ownership foundation
 - categories module
@@ -35,9 +37,16 @@ Frontend and mobile can use `/openapi.json` to generate typed API clients.
 - `POST /v1/auth/forgot-password`
 - `POST /v1/auth/reset-password`
 - `POST /v1/auth/login`
+- `POST /v1/auth/google`
 - `POST /v1/auth/refresh`
 - `PATCH /v1/auth/change-password`
 - `POST /v1/auth/logout`
+
+## Notification endpoints
+
+- `POST /v1/notifications/device-tokens`
+
+The device-token endpoint requires bearer auth and stores native FCM/APNs tokens for the signed-in user.
 
 ## User endpoint
 
@@ -73,6 +82,17 @@ Required env vars (see `.env.example`):
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
 - `WEB_BASE_URL` (or override `STRIPE_CHECKOUT_SUCCESS_URL` / `STRIPE_CHECKOUT_CANCEL_URL`)
+
+## Firebase and Google login
+
+Required env vars for Google login:
+
+- `GOOGLE_CLIENT_IDS`: comma-separated OAuth client IDs accepted by Eventy mobile/web.
+
+Firebase Cloud Messaging is optional at startup, but required before sending push notifications:
+
+- `FIREBASE_PROJECT_ID`
+- `FIREBASE_CREDENTIALS_FILE` or `FIREBASE_CREDENTIALS_JSON`
 
 ## Admin endpoints
 

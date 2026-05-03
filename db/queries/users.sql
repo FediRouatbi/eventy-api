@@ -3,11 +3,13 @@ INSERT INTO users (
     id,
     name,
     email,
+    firebase_uid,
     password_hash,
     role,
     organizer_id
 ) VALUES (
     ?,
+    NULLIF(?, ''),
     ?,
     ?,
     ?,
@@ -16,13 +18,13 @@ INSERT INTO users (
 );
 
 -- name: GetUserByEmail :one
-SELECT id, name, email, password_hash, role, organizer_id, created_at, updated_at
+SELECT id, name, email, firebase_uid, password_hash, role, organizer_id, created_at, updated_at
 FROM users
 WHERE email = ?
 LIMIT 1;
 
 -- name: GetUserByID :one
-SELECT id, name, email, password_hash, role, organizer_id, created_at, updated_at
+SELECT id, name, email, firebase_uid, password_hash, role, organizer_id, created_at, updated_at
 FROM users
 WHERE id = ?
 LIMIT 1;
@@ -35,6 +37,11 @@ WHERE id = ?;
 UPDATE users
 SET password_hash = ?
 WHERE email = ?;
+
+-- name: UpdateUserFirebaseUID :exec
+UPDATE users
+SET firebase_uid = NULLIF(?, '')
+WHERE id = ?;
 
 -- name: CheckUserEmailExists :one
 SELECT EXISTS(

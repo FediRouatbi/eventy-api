@@ -8,11 +8,19 @@ import (
 )
 
 type Service struct {
-	repository *Repository
+	repository      *Repository
+	firebaseDeleter FirebaseDeleter
 }
 
-func NewService(repository *Repository) *Service {
-	return &Service{repository: repository}
+type FirebaseDeleter interface {
+	DeleteUser(ctx context.Context, uid string) error
+}
+
+func NewService(repository *Repository, firebaseDeleter FirebaseDeleter) *Service {
+	return &Service{
+		repository:      repository,
+		firebaseDeleter: firebaseDeleter,
+	}
 }
 
 func (s *Service) GetProfile(ctx context.Context, userID uuid.UUID) (Profile, error) {
@@ -30,12 +38,17 @@ func (s *Service) UpdateProfile(ctx context.Context, userID uuid.UUID, input Upd
 	return s.repository.UpdateProfile(ctx, userID, input)
 }
 
-func (s *Service) DeleteProfileWithPassword(ctx context.Context, userID uuid.UUID, input DeleteAccountInput) error {
-	input.CurrentPassword = strings.TrimSpace(input.CurrentPassword)
-
-	if err := validateDeleteAccountInput(input); err != nil {
+func (s *Service) DeleteProfile(ctx context.Context, userID uuid.UUID) error {
+	profile, err := s.repository.GetProfileByID(ctx, userID)
+	if err != nil {
 		return err
 	}
 
-	return s.repository.DeleteProfileWithPassword(ctx, userID, input)
+	if profile.FirebaseUID != nil && s.firebaseDeleter != nil {
+		if err := s.firebaseDeleter.DeleteUser(ctx, *profile.FirebaseUID); err != nil {
+			return err
+		}
+	}
+
+	return s.repository.DeleteProfile(ctx, userID)
 }

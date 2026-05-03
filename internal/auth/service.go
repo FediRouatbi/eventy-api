@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
+	eventyfirebase "eventy-api/internal/platform/firebase"
 	"eventy-api/internal/platform/jwt"
 	"strings"
 	"time"
@@ -10,166 +11,59 @@ import (
 	"github.com/google/uuid"
 )
 
-type registrationMailer interface {
-	SendRegistrationOTP(toEmail string, otpCode string) error
-	SendPasswordResetOTP(toEmail string, otpCode string) error
-}
-
-type GoogleIdentity struct {
-	Email         string
-	Name          string
-	EmailVerified bool
-}
-
-type GoogleVerifier interface {
-	VerifyIDToken(ctx context.Context, idToken string) (GoogleIdentity, error)
+type FirebaseVerifier interface {
+	VerifyIDToken(ctx context.Context, idToken string) (eventyfirebase.FirebaseIdentity, error)
 }
 
 type Service struct {
-	repository   *Repository
-	tokenManager *jwt.Manager
-	mailer       registrationMailer
-	googleVerifier GoogleVerifier
-	registerTTL  time.Duration
-	refreshTTL   time.Duration
+	repository       *Repository
+	tokenManager     *jwt.Manager
+	firebaseVerifier FirebaseVerifier
+	refreshTTL       time.Duration
 }
 
-func NewService(repository *Repository, tokenManager *jwt.Manager, mailer registrationMailer, googleVerifier GoogleVerifier, registerTTL time.Duration, refreshTTL time.Duration) *Service {
+func NewService(repository *Repository, tokenManager *jwt.Manager, firebaseVerifier FirebaseVerifier, refreshTTL time.Duration) *Service {
 	return &Service{
-		repository:   repository,
-		tokenManager: tokenManager,
-		mailer:       mailer,
-		googleVerifier: googleVerifier,
-		registerTTL:  registerTTL,
-		refreshTTL:   refreshTTL,
+		repository:       repository,
+		tokenManager:     tokenManager,
+		firebaseVerifier: firebaseVerifier,
+		refreshTTL:       refreshTTL,
 	}
 }
 
-func (s *Service) Register(ctx context.Context, input RegisterInput) (MessageResponse, error) {
-	input.Name = strings.TrimSpace(input.Name)
-	input.Email = normalizeEmail(input.Email)
-
-	if err := validateRegisterInput(input); err != nil {
-		return MessageResponse{}, err
-	}
-
-	exists, err := s.repository.UserEmailExists(ctx, input.Email)
-	if err != nil {
-		return MessageResponse{}, err
-	}
-	if exists {
-		return MessageResponse{}, ErrEmailAlreadyExists
-	}
-
-	passwordHash, err := hashPassword(input.Password)
-	if err != nil {
-		return MessageResponse{}, err
-	}
-
-	otpCode, err := generateOTPCode()
-	if err != nil {
-		return MessageResponse{}, err
-	}
-
-	expiresAt := time.Now().Add(s.registerTTL)
-	err = s.repository.SavePendingRegistration(ctx, input, passwordHash, otpCode, expiresAt)
-	if err != nil {
-		return MessageResponse{}, err
-	}
-
-	if err := s.mailer.SendRegistrationOTP(input.Email, otpCode); err != nil {
-		return MessageResponse{}, err
-	}
-
-	return MessageResponse{
-		Message: "registration otp sent successfully",
-	}, nil
-}
-
-func (s *Service) ResendRegisterOTP(ctx context.Context, input ResendRegisterOTPInput) (MessageResponse, error) {
-	input.Email = normalizeEmail(input.Email)
-
-	if err := validateResendRegisterOTPInput(input); err != nil {
-		return MessageResponse{}, err
-	}
-
-	pending, err := s.repository.GetPendingRegistrationByEmail(ctx, input.Email)
-	if err != nil {
-		return MessageResponse{}, err
-	}
-
-	otpCode, err := generateOTPCode()
-	if err != nil {
-		return MessageResponse{}, err
-	}
-
-	expiresAt := time.Now().Add(s.registerTTL)
-	if err := s.repository.UpdatePendingRegistrationOTP(ctx, pending, otpCode, expiresAt); err != nil {
-		return MessageResponse{}, err
-	}
-
-	if err := s.mailer.SendRegistrationOTP(input.Email, otpCode); err != nil {
-		return MessageResponse{}, err
-	}
-
-	return MessageResponse{
-		Message: "registration otp resent successfully",
-	}, nil
-}
-
-func (s *Service) Login(ctx context.Context, input LoginInput) (AuthResult, error) {
-	input.Email = normalizeEmail(input.Email)
-
-	if err := validateLoginInput(input); err != nil {
-		return AuthResult{}, err
-	}
-
-	user, passwordHash, err := s.repository.GetUserByEmail(ctx, input.Email)
-	if err != nil {
-		if errors.Is(err, ErrInvalidCredentials) {
-			pending, pendingErr := s.repository.GetPendingRegistrationByEmail(ctx, input.Email)
-			if pendingErr == nil && comparePassword(pending.PasswordHash, input.Password) == nil {
-				return AuthResult{}, ErrAccountPendingVerification
-			}
-		}
-
-		return AuthResult{}, err
-	}
-
-	if err := comparePassword(passwordHash, input.Password); err != nil {
-		return AuthResult{}, ErrInvalidCredentials
-	}
-
-	return s.createAuthResult(ctx, user)
-}
-
-func (s *Service) LoginWithGoogle(ctx context.Context, input GoogleLoginInput) (AuthResult, error) {
+func (s *Service) LoginWithFirebase(ctx context.Context, input FirebaseLoginInput) (AuthResult, error) {
 	input.IDToken = strings.TrimSpace(input.IDToken)
 	input.Platform = strings.TrimSpace(input.Platform)
 
-	if err := validateGoogleLoginInput(input); err != nil {
+	if err := validateFirebaseLoginInput(input); err != nil {
 		return AuthResult{}, err
 	}
 
-	if s.googleVerifier == nil {
-		return AuthResult{}, ErrInvalidGoogleToken
+	if s.firebaseVerifier == nil {
+		return AuthResult{}, ErrInvalidFirebaseToken
 	}
 
-	identity, err := s.googleVerifier.VerifyIDToken(ctx, input.IDToken)
+	identity, err := s.firebaseVerifier.VerifyIDToken(ctx, input.IDToken)
 	if err != nil {
-		return AuthResult{}, ErrInvalidGoogleToken
+		return AuthResult{}, ErrInvalidFirebaseToken
 	}
 
-	identity.Email = normalizeEmail(identity.Email)
-	identity.Name = strings.TrimSpace(identity.Name)
-	if !identity.EmailVerified || !isValidEmail(identity.Email) {
-		return AuthResult{}, ErrInvalidGoogleToken
+	email := normalizeEmail(identity.Email)
+	name := strings.TrimSpace(identity.Name)
+	if !isValidEmail(email) {
+		return AuthResult{}, ErrInvalidFirebaseToken
 	}
-	if identity.Name == "" {
-		identity.Name = identity.Email
+	if strings.TrimSpace(identity.UID) == "" {
+		return AuthResult{}, ErrInvalidFirebaseToken
+	}
+	if !identity.EmailVerified {
+		return AuthResult{}, ErrFirebaseEmailNotVerified
+	}
+	if name == "" {
+		name = email
 	}
 
-	user, _, err := s.repository.GetUserByEmail(ctx, identity.Email)
+	user, _, err := s.repository.GetUserByEmail(ctx, email)
 	if err != nil {
 		if !errors.Is(err, ErrInvalidCredentials) {
 			return AuthResult{}, err
@@ -180,157 +74,37 @@ func (s *Service) LoginWithGoogle(ctx context.Context, input GoogleLoginInput) (
 			return AuthResult{}, hashErr
 		}
 
-		user, err = s.repository.CreateUser(ctx, RegisterInput{
-			Name:     identity.Name,
-			Email:    identity.Email,
-			Password: "",
+		user, err = s.repository.CreateUser(ctx, CreateUserInput{
+			Name:        name,
+			Email:       email,
+			FirebaseUID: identity.UID,
 		}, passwordHash)
 		if err != nil {
 			return AuthResult{}, err
 		}
-
-		_ = s.repository.DeletePendingRegistrationByEmail(ctx, identity.Email)
+	} else if user.FirebaseUID == nil || *user.FirebaseUID != identity.UID {
+		user, err = s.repository.UpdateUserFirebaseUID(ctx, user.ID, identity.UID)
+		if err != nil {
+			return AuthResult{}, err
+		}
 	}
 
 	return s.createAuthResult(ctx, user)
 }
 
-func (s *Service) VerifyRegisterOTP(ctx context.Context, input VerifyRegisterOTPInput) (AuthResult, error) {
-	input.Email = normalizeEmail(input.Email)
-	input.OTP = strings.TrimSpace(input.OTP)
-
-	if err := validateVerifyRegisterOTPInput(input); err != nil {
-		return AuthResult{}, err
-	}
-
-	pending, err := s.repository.GetPendingRegistrationByEmail(ctx, input.Email)
-	if err != nil {
-		return AuthResult{}, err
-	}
-
-	if time.Now().After(pending.ExpiresAt) {
-		return AuthResult{}, ErrOTPExpired
-	}
-
-	if pending.OTPCode != input.OTP {
-		return AuthResult{}, ErrOTPDoesNotMatch
-	}
-
-	user, err := s.repository.CreateUser(ctx, RegisterInput{
-		Name:     pending.Name,
-		Email:    pending.Email,
-		Password: "",
-	}, pending.PasswordHash)
-	if err != nil {
-		return AuthResult{}, err
-	}
-
-	if err := s.repository.DeletePendingRegistrationByEmail(ctx, input.Email); err != nil {
-		return AuthResult{}, err
-	}
-
-	return s.createAuthResult(ctx, user)
-}
-
-func (s *Service) ForgotPassword(ctx context.Context, input ForgotPasswordInput) (MessageResponse, error) {
+func (s *Service) CheckEmailAvailability(ctx context.Context, input EmailAvailabilityInput) (EmailAvailabilityResult, error) {
 	input.Email = normalizeEmail(input.Email)
 
-	if err := validateForgotPasswordInput(input); err != nil {
-		return MessageResponse{}, err
+	if err := validateEmailAvailabilityInput(input); err != nil {
+		return EmailAvailabilityResult{}, err
 	}
 
-	user, _, err := s.repository.GetUserByEmail(ctx, input.Email)
+	exists, err := s.repository.UserEmailExists(ctx, input.Email)
 	if err != nil {
-		return MessageResponse{}, err
+		return EmailAvailabilityResult{}, err
 	}
 
-	token, err := generateOTPCode()
-	if err != nil {
-		return MessageResponse{}, err
-	}
-
-	expiresAt := time.Now().Add(s.registerTTL)
-	if err := s.repository.SavePasswordResetToken(ctx, user, token, expiresAt); err != nil {
-		return MessageResponse{}, err
-	}
-
-	if err := s.mailer.SendPasswordResetOTP(user.Email, token); err != nil {
-		return MessageResponse{}, err
-	}
-
-	return MessageResponse{
-		Message: "password reset otp sent successfully",
-	}, nil
-}
-
-func (s *Service) ResetPassword(ctx context.Context, input ResetPasswordInput) (MessageResponse, error) {
-	input.Email = normalizeEmail(input.Email)
-	input.Token = strings.TrimSpace(input.Token)
-
-	if err := validateResetPasswordInput(input); err != nil {
-		return MessageResponse{}, err
-	}
-
-	resetToken, err := s.repository.GetPasswordResetTokenByEmail(ctx, input.Email)
-	if err != nil {
-		return MessageResponse{}, err
-	}
-
-	if time.Now().After(resetToken.ExpiresAt) {
-		return MessageResponse{}, ErrPasswordResetExpired
-	}
-
-	if resetToken.Token != input.Token {
-		return MessageResponse{}, ErrPasswordResetInvalid
-	}
-
-	passwordHash, err := hashPassword(input.NewPassword)
-	if err != nil {
-		return MessageResponse{}, err
-	}
-
-	if err := s.repository.UpdateUserPasswordByEmail(ctx, input.Email, passwordHash); err != nil {
-		return MessageResponse{}, err
-	}
-
-	if err := s.repository.DeletePasswordResetTokenByEmail(ctx, input.Email); err != nil {
-		return MessageResponse{}, err
-	}
-
-	return MessageResponse{
-		Message: "password reset successfully",
-	}, nil
-}
-
-func (s *Service) ChangePassword(ctx context.Context, userID uuid.UUID, input ChangePasswordInput) (MessageResponse, error) {
-	input.CurrentPassword = strings.TrimSpace(input.CurrentPassword)
-	input.NewPassword = strings.TrimSpace(input.NewPassword)
-
-	if err := validateChangePasswordInput(input); err != nil {
-		return MessageResponse{}, err
-	}
-
-	_, passwordHash, err := s.repository.GetUserByID(ctx, userID)
-	if err != nil {
-		return MessageResponse{}, err
-	}
-
-	if err := comparePassword(passwordHash, input.CurrentPassword); err != nil {
-		return MessageResponse{}, ErrCurrentPasswordWrong
-	}
-
-	newPasswordHash, err := hashPassword(input.NewPassword)
-	if err != nil {
-		return MessageResponse{}, err
-	}
-
-	if err := s.repository.UpdateUserPasswordByID(ctx, userID, newPasswordHash); err != nil {
-		return MessageResponse{}, err
-	}
-
-	return MessageResponse{
-		Message: "password changed successfully",
-	}, nil
+	return EmailAvailabilityResult{Available: !exists}, nil
 }
 
 func (s *Service) RefreshSession(ctx context.Context, input RefreshTokenInput) (AuthResult, error) {
