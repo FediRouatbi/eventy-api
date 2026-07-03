@@ -21,7 +21,7 @@ func NewRepository(db *sql.DB) *Repository {
 	return &Repository{db: db}
 }
 
-func (r *Repository) CreateOrganizerAdmin(ctx context.Context, input CreateOrganizerAdminInput) (CreateOrganizerAdminResult, error) {
+func (r *Repository) CreateOrganizerAdmin(ctx context.Context, input CreateOrganizerAdminInput, firebaseUID string) (CreateOrganizerAdminResult, error) {
 	passwordHash, err := hashPassword(uuid.NewString())
 	if err != nil {
 		return CreateOrganizerAdminResult{}, err
@@ -68,10 +68,12 @@ INSERT INTO users (
     id,
     name,
     email,
+    firebase_uid,
     password_hash,
     role,
     organizer_id
 ) VALUES (
+    ?,
     ?,
     ?,
     ?,
@@ -82,6 +84,7 @@ INSERT INTO users (
 		adminID.String(),
 		input.AdminName,
 		input.AdminEmail,
+		nullableFirebaseUID(firebaseUID),
 		passwordHash,
 		roles.OrganizerAdmin,
 		organizerID.String(),
@@ -1151,7 +1154,7 @@ ORDER BY created_at ASC, name ASC
 	return items, rows.Err()
 }
 
-func (r *Repository) AddOrganizerAdmin(ctx context.Context, organizerID uuid.UUID, input AddOrganizerAdminInput) (OrganizerAdmin, error) {
+func (r *Repository) AddOrganizerAdmin(ctx context.Context, organizerID uuid.UUID, input AddOrganizerAdminInput, firebaseUID string) (OrganizerAdmin, error) {
 	if err := r.ensureOrganizerExists(ctx, organizerID); err != nil {
 		return OrganizerAdmin{}, err
 	}
@@ -1167,10 +1170,12 @@ INSERT INTO users (
     id,
     name,
     email,
+    firebase_uid,
     password_hash,
     role,
     organizer_id
 ) VALUES (
+    ?,
     ?,
     ?,
     ?,
@@ -1182,6 +1187,7 @@ INSERT INTO users (
 		adminID.String(),
 		input.AdminName,
 		input.AdminEmail,
+		nullableFirebaseUID(firebaseUID),
 		passwordHash,
 		roles.OrganizerAdmin,
 		organizerID.String(),
@@ -1349,6 +1355,11 @@ WHERE id = ?
 	tx = nil
 
 	return nil
+}
+
+func nullableFirebaseUID(firebaseUID string) sql.NullString {
+	trimmed := strings.TrimSpace(firebaseUID)
+	return sql.NullString{String: trimmed, Valid: trimmed != ""}
 }
 
 func hashPassword(password string) (string, error) {

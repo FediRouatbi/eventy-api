@@ -2,23 +2,13 @@ package middleware
 
 import (
 	"net/http"
-	"strings"
 )
 
-func NewCORS(allowedOrigins []string) func(http.Handler) http.Handler {
-	allowlist := make(map[string]struct{}, len(allowedOrigins))
-	for _, origin := range allowedOrigins {
-		origin = strings.TrimRight(strings.TrimSpace(origin), "/")
-		if origin == "" {
-			continue
-		}
-		allowlist[origin] = struct{}{}
-	}
-
+func NewCORS() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			origin := r.Header.Get("Origin")
-			if _, ok := allowlist[origin]; ok {
+			if origin != "" {
 				w.Header().Set("Access-Control-Allow-Origin", origin)
 				w.Header().Set("Vary", "Origin")
 				w.Header().Set("Access-Control-Allow-Credentials", "true")

@@ -141,12 +141,55 @@ func (v *GoogleVerifier) VerifyIDToken(ctx context.Context, rawIDToken string) (
 	return FirebaseIdentity{}, errors.New("google id token audience is not allowed")
 }
 
+// ErrAuthNotConfigured is returned by provisioning helpers when the Firebase
+// Admin SDK is not configured (no credentials / project id). Callers may treat
+// it as a signal to skip Firebase provisioning rather than fail hard.
+var ErrAuthNotConfigured = errors.New("firebase auth is not configured")
+
 type FirebaseVerifier struct {
 	client *auth.Client
 }
 
 func NewFirebaseVerifier(client *auth.Client) *FirebaseVerifier {
 	return &FirebaseVerifier{client: client}
+}
+
+// EnsureUser makes sure a Firebase Authentication user exists for the given
+// email. If the user does not exist it is created with the supplied password
+// (created=true). If it already exists its password is left untouched and the
+// existing UID is returned (created=false). Returns ErrAuthNotConfigured when
+// the Admin SDK is not configured.
+func (v *FirebaseVerifier) EnsureUser(ctx context.Context, email string, password string, name string) (uid string, created bool, err error) {
+	if v == nil || v.client == nil {
+		return "", false, ErrAuthNotConfigured
+	}
+
+	email = strings.ToLower(strings.TrimSpace(email))
+	name = strings.TrimSpace(name)
+	if name == "" {
+		name = email
+	}
+
+	existing, err := v.client.GetUserByEmail(ctx, email)
+	if err != nil {
+		if !auth.IsUserNotFound(err) {
+			return "", false, err
+		}
+
+		params := (&auth.UserToCreate{}).
+			Email(email).
+			Password(password).
+			DisplayName(name).
+			EmailVerified(true)
+		record, err := v.client.CreateUser(ctx, params)
+		if err != nil {
+			return "", false, err
+		}
+
+		return record.UID, true, nil
+	}
+
+	return existing.UID, false, nil
 }
 
 type FirebaseIdentity struct {

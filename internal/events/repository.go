@@ -2885,3 +2885,22 @@ WHERE id = ?
 
 	return tx.Commit()
 }
+
+// EventBookingReadiness returns the event's status plus how many sessions and
+// ticket types it has. An event is only bookable (worth notifying about) when it
+// is published and has at least one session and one ticket type.
+func (r *Repository) EventBookingReadiness(ctx context.Context, eventID uuid.UUID) (status string, sessionCount int, ticketTypeCount int, err error) {
+	const query = `
+SELECT
+	e.status,
+	(SELECT COUNT(*) FROM event_sessions s WHERE s.event_id = e.id),
+	(SELECT COUNT(*) FROM ticket_types tt
+		JOIN event_sessions s ON s.id = tt.event_session_id
+		WHERE s.event_id = e.id)
+FROM events e
+WHERE e.id = ?
+`
+
+	err = r.db.QueryRowContext(ctx, query, eventID.String()).Scan(&status, &sessionCount, &ticketTypeCount)
+	return status, sessionCount, ticketTypeCount, err
+}

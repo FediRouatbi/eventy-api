@@ -184,8 +184,8 @@ func (h *Handler) setRefreshTokenCookie(w http.ResponseWriter, refreshToken stri
 		Path:     "/",
 		Expires:  expiresAt,
 		HttpOnly: true,
-		Secure:   h.cookieSettings.Secure,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: http.SameSiteNoneMode,
+		Secure:   true,
 		Domain:   h.cookieSettings.Domain,
 	})
 }
@@ -198,8 +198,8 @@ func (h *Handler) clearRefreshTokenCookie(w http.ResponseWriter) {
 		Expires:  time.Unix(0, 0),
 		MaxAge:   -1,
 		HttpOnly: true,
-		Secure:   h.cookieSettings.Secure,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: http.SameSiteNoneMode,
+		Secure:   true,
 		Domain:   h.cookieSettings.Domain,
 	})
 }

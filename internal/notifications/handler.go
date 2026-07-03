@@ -44,6 +44,36 @@ func (h *Handler) RegisterDeviceToken(w http.ResponseWriter, r *http.Request) {
 	responses.WriteJSON(w, http.StatusOK, result)
 }
 
+type unregisterDeviceTokenInput struct {
+	Token string `json:"token"`
+}
+
+func (h *Handler) UnregisterDeviceToken(w http.ResponseWriter, r *http.Request) {
+	claims, ok := httpmiddleware.ClaimsFromContext(r.Context())
+	if !ok {
+		responses.WriteError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	var input unregisterDeviceTokenInput
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+
+	if err := decoder.Decode(&input); err != nil {
+		logger.RequestError(r, "notifications.device_tokens.unregister.decode", err)
+		responses.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	result, err := h.service.UnregisterDeviceToken(r.Context(), claims.UserID, input.Token)
+	if err != nil {
+		h.writeNotificationError(w, r, err)
+		return
+	}
+
+	responses.WriteJSON(w, http.StatusOK, result)
+}
+
 func (h *Handler) writeNotificationError(w http.ResponseWriter, r *http.Request, err error) {
 	logger.RequestError(r, "notifications", err)
 

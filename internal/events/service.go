@@ -31,12 +31,22 @@ type ticketsRepository interface {
 	ListByOrderID(ctx context.Context, orderID uuid.UUID) ([]tickets.Ticket, error)
 }
 
+// pushNotifier delivers push notifications. It is satisfied by
+// notifications.Dispatcher and is optional (nil when Firebase messaging is not
+// configured). All methods are best-effort and must not affect business flow.
+type pushNotifier interface {
+	NotifyUserByEmail(ctx context.Context, email, title, body string, data map[string]string)
+	NotifyEventAudience(ctx context.Context, eventID uuid.UUID, title, body string, data map[string]string)
+	NotifyAllUsers(ctx context.Context, title, body string, data map[string]string)
+}
+
 type Service struct {
 	repository *Repository
 	stripeCfg  StripeConfig
 	webBaseURL string
 	mailer     ticketsMailer
 	tickets    ticketsRepository
+	notifier   pushNotifier
 }
 
 type StripeConfig struct {
@@ -54,6 +64,59 @@ func NewService(repository *Repository, stripeCfg StripeConfig, webBaseURL strin
 		mailer:     mailer,
 		tickets:    ticketsRepo,
 	}
+}
+
+// SetPushNotifier wires an optional push-notification dispatcher. Safe to leave
+// unset (e.g. when Firebase messaging is not configured).
+func (s *Service) SetPushNotifier(notifier pushNotifier) {
+	s.notifier = notifier
+}
+
+// eventIsBookable reports whether an event is worth notifying about: it must be
+// published and have at least one session and one ticket type. Best-effort — on
+// a query error it returns false so we simply skip the notification.
+func (s *Service) eventIsBookable(ctx context.Context, eventID uuid.UUID) bool {
+	status, sessions, ticketTypes, err := s.repository.EventBookingReadiness(ctx, eventID)
+	if err != nil {
+		return false
+	}
+	return status == "published" && sessions > 0 && ticketTypes > 0
+}
+
+// announceEventChange centralizes the "available event" notification rule. When
+// the event just became bookable it broadcasts to everyone; when it was already
+// bookable (a genuine edit) it notifies only the event's ticket holders. Callers
+// must only invoke this when the event is currently bookable.
+func (s *Service) announceEventChange(
+	ctx context.Context,
+	eventID uuid.UUID,
+	title string,
+	audienceType string,
+	audienceHeading string,
+	audienceBody string,
+	justBecameBookable bool,
+) {
+	if s.notifier == nil {
+		return
+	}
+
+	if justBecameBookable {
+		s.notifier.NotifyAllUsers(
+			ctx,
+			"New event on Eventy",
+			fmt.Sprintf("%s is now live with tickets available. Book now!", title),
+			map[string]string{"type": "event_available", "event_id": eventID.String()},
+		)
+		return
+	}
+
+	s.notifier.NotifyEventAudience(
+		ctx,
+		eventID,
+		audienceHeading,
+		audienceBody,
+		map[string]string{"type": audienceType, "event_id": eventID.String()},
+	)
 }
 
 func (s *Service) Create(ctx context.Context, claims *jwt.Claims, input CreateEventInput) (Event, error) {
@@ -85,7 +148,16 @@ func (s *Service) Create(ctx context.Context, claims *jwt.Claims, input CreateEv
 		return Event{}, ErrInvalidCategoryID
 	}
 
-	return s.repository.Create(ctx, organizerID, categoryID, input)
+	created, err := s.repository.Create(ctx, organizerID, categoryID, input)
+	if err != nil {
+		return Event{}, err
+	}
+
+	// No notification on create: a brand-new event has no sessions or ticket
+	// types yet, so it is never bookable. The "available" broadcast fires later
+	// (from AddTicketType / publish) once it actually has a session + ticket type.
+
+	return created, nil
 }
 
 func (s *Service) Update(ctx context.Context, claims *jwt.Claims, eventID uuid.UUID, input UpdateEventInput) (Event, error) {
@@ -119,6 +191,39 @@ func (s *Service) Update(ctx context.Context, claims *jwt.Claims, eventID uuid.U
 	updated, err := s.repository.Update(ctx, event.ID, categoryID, input)
 	if err != nil {
 		return Event{}, err
+	}
+
+	if s.notifier != nil {
+		if updated.Status == "cancelled" && event.Status != "cancelled" {
+			// Cancellation always warns ticket holders, regardless of bookability.
+			s.notifier.NotifyEventAudience(
+				ctx,
+				updated.ID,
+				"Event cancelled",
+				fmt.Sprintf("%s has been cancelled. Tap for details.", updated.Title),
+				map[string]string{"type": "event_cancelled", "event_id": updated.ID.String()},
+			)
+		} else {
+			// An event update leaves sessions/ticket types untouched, so the only
+			// thing that can flip bookability is the status change.
+			_, sessions, ticketTypes, readErr := s.repository.EventBookingReadiness(ctx, updated.ID)
+			if readErr == nil {
+				hasPieces := sessions > 0 && ticketTypes > 0
+				bookableAfter := updated.Status == "published" && hasPieces
+				bookableBefore := event.Status == "published" && hasPieces
+				if bookableAfter {
+					s.announceEventChange(
+						ctx,
+						updated.ID,
+						updated.Title,
+						"event_updated",
+						"Event updated",
+						fmt.Sprintf("%s has been updated. Check the latest details.", updated.Title),
+						!bookableBefore,
+					)
+				}
+			}
+		}
 	}
 
 	return updated, nil
@@ -393,7 +498,21 @@ func (s *Service) HandleStripeWebhook(ctx context.Context, payload []byte, signa
 		return err
 	}
 
-	return s.repository.MarkCheckoutOrderTicketsEmailed(ctx, order.ID)
+	if err := s.repository.MarkCheckoutOrderTicketsEmailed(ctx, order.ID); err != nil {
+		return err
+	}
+
+	if s.notifier != nil {
+		s.notifier.NotifyUserByEmail(
+			ctx,
+			order.CustomerEmail,
+			"Payment confirmed",
+			fmt.Sprintf("Your tickets for order %s are ready.", order.OrderNumber),
+			map[string]string{"type": "order_paid", "order_id": order.ID.String()},
+		)
+	}
+
+	return nil
 }
 
 func (s *Service) GetByID(ctx context.Context, claims *jwt.Claims, eventID uuid.UUID) (Event, error) {
@@ -429,11 +548,32 @@ func (s *Service) CreateSession(ctx context.Context, claims *jwt.Claims, eventID
 		return EventSession{}, err
 	}
 
-	if _, err := s.getAccessibleEvent(ctx, claims, eventID); err != nil {
+	event, err := s.getAccessibleEvent(ctx, claims, eventID)
+	if err != nil {
 		return EventSession{}, err
 	}
 
-	return s.repository.CreateSession(ctx, eventID, input)
+	created, err := s.repository.CreateSession(ctx, eventID, input)
+	if err != nil {
+		return EventSession{}, err
+	}
+
+	// A new session carries no ticket types, so it can never make an event
+	// bookable on its own — only notify ticket holders of an already-bookable
+	// event that a new date was added.
+	if s.eventIsBookable(ctx, eventID) {
+		s.announceEventChange(
+			ctx,
+			eventID,
+			event.Title,
+			"session_added",
+			"New date added",
+			fmt.Sprintf("%s — a new date was added.", event.Title),
+			false,
+		)
+	}
+
+	return created, nil
 }
 
 func (s *Service) ListSessions(ctx context.Context, claims *jwt.Claims, eventID uuid.UUID) ([]EventSession, error) {
@@ -451,7 +591,8 @@ func (s *Service) UpdateSession(ctx context.Context, claims *jwt.Claims, eventID
 		return EventSession{}, err
 	}
 
-	if _, err := s.getAccessibleEvent(ctx, claims, eventID); err != nil {
+	event, err := s.getAccessibleEvent(ctx, claims, eventID)
+	if err != nil {
 		return EventSession{}, err
 	}
 
@@ -464,7 +605,24 @@ func (s *Service) UpdateSession(ctx context.Context, claims *jwt.Claims, eventID
 		return EventSession{}, ErrEventSessionNotFound
 	}
 
-	return s.repository.UpdateSession(ctx, sessionID, input)
+	updated, err := s.repository.UpdateSession(ctx, sessionID, input)
+	if err != nil {
+		return EventSession{}, err
+	}
+
+	if s.eventIsBookable(ctx, eventID) {
+		s.announceEventChange(
+			ctx,
+			eventID,
+			event.Title,
+			"session_updated",
+			"Session updated",
+			fmt.Sprintf("%s — a session was updated.", event.Title),
+			false,
+		)
+	}
+
+	return updated, nil
 }
 
 func (s *Service) DeleteSession(ctx context.Context, claims *jwt.Claims, eventID uuid.UUID, sessionID uuid.UUID) error {
@@ -492,7 +650,8 @@ func (s *Service) CreateTicketType(ctx context.Context, claims *jwt.Claims, even
 		return TicketType{}, err
 	}
 
-	if _, err := s.getAccessibleEvent(ctx, claims, eventID); err != nil {
+	event, err := s.getAccessibleEvent(ctx, claims, eventID)
+	if err != nil {
 		return TicketType{}, err
 	}
 
@@ -505,7 +664,29 @@ func (s *Service) CreateTicketType(ctx context.Context, claims *jwt.Claims, even
 		return TicketType{}, ErrEventSessionNotFound
 	}
 
-	return s.repository.CreateTicketType(ctx, sessionID, input)
+	created, err := s.repository.CreateTicketType(ctx, sessionID, input)
+	if err != nil {
+		return TicketType{}, err
+	}
+
+	// Adding the first ticket type to a published event with a session is the
+	// moment it becomes bookable → broadcast. Adding another to an already
+	// bookable event → notify its ticket holders.
+	if _, sessions, ticketTypes, readErr := s.repository.EventBookingReadiness(ctx, eventID); readErr == nil {
+		if event.Status == "published" && sessions > 0 && ticketTypes > 0 {
+			s.announceEventChange(
+				ctx,
+				eventID,
+				event.Title,
+				"ticket_added",
+				"New tickets available",
+				fmt.Sprintf("%s — new tickets are on sale: %s.", event.Title, created.Name),
+				ticketTypes == 1,
+			)
+		}
+	}
+
+	return created, nil
 }
 
 func (s *Service) ListTicketTypes(ctx context.Context, claims *jwt.Claims, eventID uuid.UUID, sessionID uuid.UUID) ([]TicketType, error) {
@@ -533,7 +714,8 @@ func (s *Service) UpdateTicketType(ctx context.Context, claims *jwt.Claims, even
 		return TicketType{}, err
 	}
 
-	if _, err := s.getAccessibleEvent(ctx, claims, eventID); err != nil {
+	event, err := s.getAccessibleEvent(ctx, claims, eventID)
+	if err != nil {
 		return TicketType{}, err
 	}
 
@@ -555,7 +737,38 @@ func (s *Service) UpdateTicketType(ctx context.Context, claims *jwt.Claims, even
 		return TicketType{}, ErrTicketTypeNotFound
 	}
 
-	return s.repository.UpdateTicketType(ctx, ticketTypeID, input)
+	updated, err := s.repository.UpdateTicketType(ctx, ticketTypeID, input)
+	if err != nil {
+		return TicketType{}, err
+	}
+
+	// Updating an existing ticket type never changes bookability, so this only
+	// notifies ticket holders — and only while the event is bookable.
+	if s.eventIsBookable(ctx, eventID) {
+		if updated.Price != ticketType.Price {
+			s.announceEventChange(
+				ctx,
+				eventID,
+				event.Title,
+				"price_changed",
+				"Ticket price updated",
+				fmt.Sprintf("%s — %s is now %.2f %s.", event.Title, updated.Name, updated.Price, event.Currency),
+				false,
+			)
+		} else {
+			s.announceEventChange(
+				ctx,
+				eventID,
+				event.Title,
+				"ticket_updated",
+				"Tickets updated",
+				fmt.Sprintf("%s — ticket \"%s\" was updated.", event.Title, updated.Name),
+				false,
+			)
+		}
+	}
+
+	return updated, nil
 }
 
 func (s *Service) DeleteTicketType(ctx context.Context, claims *jwt.Claims, eventID uuid.UUID, sessionID uuid.UUID, ticketTypeID uuid.UUID) error {

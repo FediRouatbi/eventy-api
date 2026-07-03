@@ -4,22 +4,65 @@ import (
 	"bytes"
 	"context"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
+	eventyfirebase "eventy-api/internal/platform/firebase"
 	"eventy-api/internal/platform/jwt"
 	"eventy-api/internal/platform/roles"
 
 	"github.com/google/uuid"
 )
 
-type Service struct {
-	repository *Repository
+// defaultOrganizerAdminPassword is the Firebase password assigned to newly
+// provisioned organizer admins. They can change it later via Firebase.
+const defaultOrganizerAdminPassword = "123456789"
+
+// FirebaseProvisioner creates/links Firebase Authentication users for admins so
+// they can sign in with email/password (or Google) using the same address.
+type FirebaseProvisioner interface {
+	EnsureUser(ctx context.Context, email string, password string, name string) (uid string, created bool, err error)
+	DeleteUser(ctx context.Context, uid string) error
 }
 
-func NewService(repository *Repository) *Service {
-	return &Service{repository: repository}
+type Service struct {
+	repository *Repository
+	firebase   FirebaseProvisioner
+}
+
+func NewService(repository *Repository, firebase FirebaseProvisioner) *Service {
+	return &Service{repository: repository, firebase: firebase}
+}
+
+// provisionFirebaseAdmin ensures a Firebase user exists for the admin email and
+// returns its UID. When Firebase is not configured it returns an empty UID so
+// the caller can still create the database record (login back-fills the UID
+// later). The returned cleanup func removes the Firebase user if it was created
+// here, so callers can roll back on a subsequent database failure.
+func (s *Service) provisionFirebaseAdmin(ctx context.Context, email string, name string) (uid string, cleanup func(), err error) {
+	noop := func() {}
+	if s.firebase == nil {
+		return "", noop, nil
+	}
+
+	uid, created, err := s.firebase.EnsureUser(ctx, email, defaultOrganizerAdminPassword, name)
+	if err != nil {
+		if errors.Is(err, eventyfirebase.ErrAuthNotConfigured) {
+			return "", noop, nil
+		}
+
+		return "", noop, err
+	}
+
+	if !created {
+		return uid, noop, nil
+	}
+
+	return uid, func() {
+		_ = s.firebase.DeleteUser(context.Background(), uid)
+	}, nil
 }
 
 func (s *Service) CreateOrganizerAdmin(ctx context.Context, input CreateOrganizerAdminInput) (CreateOrganizerAdminResult, error) {
@@ -32,7 +75,18 @@ func (s *Service) CreateOrganizerAdmin(ctx context.Context, input CreateOrganize
 		return CreateOrganizerAdminResult{}, err
 	}
 
-	return s.repository.CreateOrganizerAdmin(ctx, input)
+	firebaseUID, cleanup, err := s.provisionFirebaseAdmin(ctx, input.AdminEmail, input.AdminName)
+	if err != nil {
+		return CreateOrganizerAdminResult{}, err
+	}
+
+	result, err := s.repository.CreateOrganizerAdmin(ctx, input, firebaseUID)
+	if err != nil {
+		cleanup()
+		return CreateOrganizerAdminResult{}, err
+	}
+
+	return result, nil
 }
 
 func (s *Service) GetOverview(ctx context.Context, claims *jwt.Claims) (AdminOverview, error) {
@@ -192,7 +246,18 @@ func (s *Service) AddOrganizerAdmin(ctx context.Context, organizerID uuid.UUID, 
 		return OrganizerAdmin{}, err
 	}
 
-	return s.repository.AddOrganizerAdmin(ctx, organizerID, input)
+	firebaseUID, cleanup, err := s.provisionFirebaseAdmin(ctx, input.AdminEmail, input.AdminName)
+	if err != nil {
+		return OrganizerAdmin{}, err
+	}
+
+	admin, err := s.repository.AddOrganizerAdmin(ctx, organizerID, input, firebaseUID)
+	if err != nil {
+		cleanup()
+		return OrganizerAdmin{}, err
+	}
+
+	return admin, nil
 }
 
 func (s *Service) UpdateOrganizerAdmin(ctx context.Context, organizerID uuid.UUID, adminID uuid.UUID, input UpdateOrganizerAdminInput) (OrganizerAdmin, error) {

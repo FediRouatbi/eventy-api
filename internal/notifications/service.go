@@ -31,3 +31,16 @@ func (s *Service) RegisterDeviceToken(ctx context.Context, userID uuid.UUID, inp
 
 	return MessageResponse{Message: "device token registered successfully"}, nil
 }
+
+func (s *Service) UnregisterDeviceToken(ctx context.Context, userID uuid.UUID, token string) (MessageResponse, error) {
+	token = strings.TrimSpace(token)
+	if token == "" {
+		return MessageResponse{}, ErrInvalidDeviceToken
+	}
+
+	if err := s.repository.RevokeUserDeviceToken(ctx, userID, token); err != nil {
+		return MessageResponse{}, err
+	}
+
+	return MessageResponse{Message: "device token unregistered successfully"}, nil
+}

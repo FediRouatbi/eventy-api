@@ -69,6 +69,7 @@ func New(adminsHandler *admins.Handler, authHandler *auth.Handler, categoriesHan
 		r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin, roles.OrganizerAdmin)).Post("/tickets/check-in", ticketsHandler.CheckInTicket)
 
 		r.With(authMiddleware.RequireAuth).Post("/notifications/device-tokens", notificationsHandler.RegisterDeviceToken)
+		r.With(authMiddleware.RequireAuth).Delete("/notifications/device-tokens", notificationsHandler.UnregisterDeviceToken)
 
 		r.Route("/admins", func(r chi.Router) {
 			r.With(authMiddleware.RequireAuth, authMiddleware.RequireRoles(roles.SuperAdmin, roles.OrganizerAdmin)).Get("/overview", adminsHandler.GetOverview)
